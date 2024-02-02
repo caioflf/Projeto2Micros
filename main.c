@@ -9,6 +9,8 @@
 // Thiago Arndt Schimit (00333710)
 /*=================================================================================================*/
 #include "main.h"
+#include "atrasos.h"
+#include "teclado.h"
 #include "controleLCD.h"
 
 void SystemClock_Config(void);
