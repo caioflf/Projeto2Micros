@@ -1,7 +1,7 @@
 /*=================================================================================================*/
 //	UNIVERSIDADE FEDERAL DO RIO GRANDE DO SUL
 //	ENG04475 - Microprocessadores I (2023/2)
-//	Projeto 1 - UBERGS
+//	Projeto 2 - HOMICROS
 //
 // Alunos:
 // Bruno Gevehr Fernandes (00335299)
