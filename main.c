@@ -11,12 +11,6 @@
 #include "main.h"
 #include "controleLCD.h"
 
-unsigned char teclado[4][3]={'1','2','3',
-	'4','5','6',
-	'7','8','9',
-	'*','0','#'
-};
-
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
