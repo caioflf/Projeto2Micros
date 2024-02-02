@@ -28,6 +28,4 @@ void inicia_lcd_4bits();
 
 void desliga_lcd_4bits();
 
-void lcdEscreverSenha();
-
 #endif
