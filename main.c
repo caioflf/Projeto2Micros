@@ -9,15 +9,13 @@
 // Thiago Arndt Schimit (00333710)
 /*=================================================================================================*/
 #include "main.h"
+#include "controleLCD.h"
 
 unsigned char teclado[4][3]={'1','2','3',
 	'4','5','6',
 	'7','8','9',
 	'*','0','#'
 };
-
-#define RS GPIO_PIN_4						// Pino RS do display na PORTA4
-#define EN GPIO_PIN_5						// Pino EN do display na PORTA5
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
