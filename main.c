@@ -1,22 +1,13 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+/*=================================================================================================*/
+//	UNIVERSIDADE FEDERAL DO RIO GRANDE DO SUL
+//	ENG04475 - Microprocessadores I (2023/2)
+//	Projeto 2 - HOMICROS
+//
+// Alunos:
+// Bruno Gevehr Fernandes (00335299)
+// Caio Fernando Leite França (00330098)
+// Thiago Arndt Schimit (00333710)
+/*=================================================================================================*/
 #include "main.h"
 
 unsigned char teclado[4][3]={'1','2','3',
