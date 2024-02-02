@@ -12,9 +12,8 @@
 #ifndef _CONTROLE_LCD_H_
 #define _CONTROLE_LCD_H_
 
-// Display (PORTC)
-#define RS 4						// Pino RS do display na PORTC4
-#define EN 5						// Pino EN do display na PORTC5
+#define RS GPIO_PIN_4						// Pino RS do display na PORTA4
+#define EN GPIO_PIN_5						// Pino EN do display na PORTA5
 
 void comando_lcd (unsigned char comando);
 
