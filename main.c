@@ -19,10 +19,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-unsigned char teclado[4][3]={'1','2','3',
-	'4','5','6',
-	'7','8','9',
-	'*','0','#'
+unsigned char teclado[4][3]={
+	{'1','2','3'},
+	{'4','5','6'},
+	{'7','8','9'},
+	{'*','0','#'}
 };
 
 #define RS GPIO_PIN_4						// Pino RS do display na PORTA4
@@ -108,26 +109,64 @@ void desliga_lcd_4bits() {
 }
 
 
-int main(void)
-{
+//LINHAS  PORT B3 B4 B5 B6
+//COLUNAS PORT B7 B8 B9
+unsigned char scan(unsigned char linha){
+	//linhas de 1 a 4
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 0);
 
+	if(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][0];
+	}
+	if(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][1];
+	}
+	if(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][2];
+	}
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+	return '\0';
+}
+
+
+int main(void){
   HAL_Init();
-
   SystemClock_Config();
-
   MX_GPIO_Init();
 
+  char letra, ultima, i;
+
   inicia_lcd_4bits();
+  limpa_lcd();
+
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
 
   while (1)
   {
-	  limpa_lcd();
-	  escreve_lcd("teste");
 
+	  for (i = 1; i<=4; i++){
+		  letra = scan(i);
+		  if ((letra != '\0') && (letra != ultima)){
+			  letra_lcd(letra);
+		  }
+		  ultima = letra;
+	  }
   }
-
 }
 
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -178,13 +217,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -194,13 +237,26 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA3
-                           PA4 PA5 */
+                           PA4 PA5 PA6 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5;
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB4 PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
