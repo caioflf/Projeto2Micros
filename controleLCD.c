@@ -15,64 +15,82 @@
 
 /*====================================  Configuracoes do LCD 16x2 =======================================*/
 
+
+
 void comando_lcd (unsigned char comando){ // comando em 4bits
-	PORTC &= ~(1<<RS);			// RS = 0
-	PORTC |= (1<<EN);			// EN = 1
-	PORTC &= 0x30;				// Limpa porta -> 0011 0000
-	PORTC |= ((comando)/16);	//Parte alta do comando
-	PORTC &= ~(1<<EN);			// EN = 0
-	PORTC |= (1<<EN);
-	PORTC &= 0x30;
-	PORTC |= (comando&0x0F);	// Parte baixa do comando
-	PORTC &= ~(1<<EN);
-	atraso_40us();
-}
+	HAL_GPIO_WritePin(GPIOA, RS, 0); // RS = 0
+	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
 
-void letra_lcd (unsigned char comando){ // letra em 4bits
-	PORTC |= (1<<RS);					// RS = 1
-	PORTC |= (1<<EN);					// EN = 1
-	PORTC &= 0x30;						// Limpa porta -> 0011 0000
-	PORTC |= ((comando)/16);			//Parte alta do comando
-	PORTC &= ~(1<<EN);					// EN = 0
-	PORTC |= (1<<EN);
-	PORTC &= 0X30;
-	PORTC |= (comando&0x0F);			// Parte baixa do comando
-	PORTC &= ~(1<<EN);
-	atraso_40us();
-}
+	//Parte alta do comando
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<4));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<5));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<6));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<7));
 
+	//atualiza
+	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
+	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
+
+	// Parte baixa do comando
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<0));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<1));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<2));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<3));
+
+	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
+
+	HAL_Delay(1);
+
+}
+void letra_lcd (unsigned char letra){ // comando em 4bits
+	HAL_GPIO_WritePin(GPIOA, RS, 1); // RS = 0
+	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
+
+	//Parte alta do comando
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<4));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<5));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<6));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<7));
+
+	//atualiza
+	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
+	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
+
+	// Parte baixa do comando
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<0));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<1));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<2));
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<3));
+
+	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
+
+	HAL_Delay(1);
+
+}
 void escreve_lcd (char  *msg){ // escreve um string no lcd
 	unsigned char i=0;
 	while (msg[i] != 0){
 		letra_lcd(msg[i]);
 		i++;
-		atraso_40us();
+		HAL_Delay(1); // atraso 40us
 	}
 }
-
 void limpa_lcd(){
 	comando_lcd(0x01);
-	atraso_1ms64();
+	HAL_Delay(2);
 }
-
 void inicia_lcd_4bits(){ // inicializa em 4bits o lcd
-	atraso_15ms();
+	HAL_Delay(15);
 	comando_lcd (0x28);
 	comando_lcd (0x0C);
 	comando_lcd (0x06);
 	comando_lcd (0x01);
-	atraso_1ms64();
+	HAL_Delay(2);//atraso_1ms64();
 }
-
 void desliga_lcd_4bits() {
-	atraso_15ms();
+	HAL_Delay(15);
 	comando_lcd (0x08);
-	atraso_1ms64();
+	HAL_Delay(2);
 }
 
-void lcdEscreverSenha(){
-	limpa_lcd();
-	escreve_lcd("Insira a senha:");
-	comando_lcd(0xC0); // nova linha
-}
 
