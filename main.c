@@ -18,116 +18,177 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "controleLCD.h"
+#include "teclado.h"
 
-unsigned char teclado[4][3]={'1','2','3',
-	'4','5','6',
-	'7','8','9',
-	'*','0','#'
-};
-
-#define RS GPIO_PIN_4						// Pino RS do display na PORTA4
-#define EN GPIO_PIN_5						// Pino EN do display na PORTA5
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
-void comando_lcd (unsigned char comando){ // comando em 4bits
-	HAL_GPIO_WritePin(GPIOA, RS, 0); // RS = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
+typedef struct flag{				// Struct para dados dos clientes
+	char sistema;
+}flag;
 
-	//Parte alta do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<4));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<5));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<6));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<7));
-
-	//atualiza
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
-
-	// Parte baixa do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<0));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<1));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<2));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<3));
-
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-
-	HAL_Delay(1);
-
-}
-void letra_lcd (unsigned char letra){ // comando em 4bits
-	HAL_GPIO_WritePin(GPIOA, RS, 1); // RS = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
-
-	//Parte alta do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<4));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<5));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<6));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<7));
-
-	//atualiza
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
-
-	// Parte baixa do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<0));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<1));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<2));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<3));
-
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-
-	HAL_Delay(1);
-
-}
-void escreve_lcd (char  *msg){ // escreve um string no lcd
-	unsigned char i=0;
-	while (msg[i] != 0){
-		letra_lcd(msg[i]);
-		i++;
-		HAL_Delay(1); // atraso 40us
+char compara_string(char* a, char* b){ // 0 se igual, 1 se diferente
+	char flag = 0;
+	while (*a != '\0' || *b != '\0') {
+		if (*a == *b) {
+			a++;
+			b++;
+		}
+		else if ((*a == '\0' && *b != '\0') || (*a != '\0' && *b == '\0') || *a != *b){// se forem diferentes
+			flag = 1;
+			return 1;
+		}
+	}
+	if (flag == 0) { // se forem iguais
+		return 0;
 	}
 }
-void limpa_lcd(){
-	comando_lcd(0x01);
-	HAL_Delay(2);
+
+void desligaSistema (flag *flag) {
+	if (flag->sistema == 1){
+		desliga_lcd_4bits();
+		flag->sistema =0;
+	}
 }
-void inicia_lcd_4bits(){ // inicializa em 4bits o lcd
-	HAL_Delay(15);
-	comando_lcd (0x28);
-	comando_lcd (0x0C);
-	comando_lcd (0x06);
-	comando_lcd (0x01);
-	HAL_Delay(2);//atraso_1ms64();
+
+// Funcao para ligar o sistema quando solicitado
+void ligaSistema(flag *flag) {
+	if (flag->sistema == 0){
+		inicia_lcd_4bits();
+		escreve_lcd("Insira a senha:");
+		comando_lcd(0xC0); // nova linha
+		flag->sistema = 1;
+		atraso_1s();		// atraso de 1seg pra nao ser lido o que estiver sendo pressionado logo apos iniciar
+	}
 }
-void desliga_lcd_4bits() {
-	HAL_Delay(15);
-	comando_lcd (0x08);
-	HAL_Delay(2);
+
+char ler_senha(){
+	char perfil = 0; //perfil 0 (senha invalida), perfil 1 , perfil 2, perfil 3 (ADM)
+	char senha[10]={'\0'}, i=0, j=0, letra = '\0';
+	while(letra!='#'&&(j<10)){
+		for(i=1;i<=4;i++){
+			letra=scan(i);
+			if (letra == 'd')
+			return letra;			//se scan retornar valor atribuido ao comando de desligamento, interrompe a funcao aqui
+
+			if('\0'!=letra && '*' != letra && '#' != letra){
+				letra_lcd('*');
+				senha[j] = letra;
+				j++;
+			}
+			else if (letra == '*'){
+				j = 0;
+				while (senha[j+1]!='\0'){
+					senha[j] = '\0';
+					j++;
+				}
+				j=0;
+				limpa_lcd();
+				escreve_lcd("Insira a senha:");
+				comando_lcd(0xC0);
+			}
+		}
+	}
+	if (!compara_string(senha, SENHA1)){
+		perfil = 1;
+		return perfil;
+	}
+	if (!compara_string(senha, SENHA2)){
+		perfil = 2;
+		return perfil;
+	}
+	if (!compara_string(senha, SENHAADM)){
+			perfil = 3;
+			return perfil;
+	}
+	else {
+		perfil = 0;
+		return perfil;
+	}
+	return perfil;
+}
+void lcdEscreverSenha(){
+	limpa_lcd();
+	escreve_lcd("Insira a senha:");
+	comando_lcd(0xC0); // nova linha
+}
+char login (flag *flag){
+	char perfil = 0;
+	lcdEscreverSenha();
+	while(1){
+		perfil = ler_senha();
+		if (perfil == 'd'){				//comando de desligar o sistema
+			desligaSistema(flag);
+			return perfil;
+		}
+		if (perfil == 1){
+			limpa_lcd();
+			escreve_lcd("Perfil 1 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 2){
+			limpa_lcd();
+			escreve_lcd("Perfil 2 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 3){
+				limpa_lcd();
+				escreve_lcd("Perfil ADM Logado!");
+				HAL_Delay(2000);
+
+		}
+		if (perfil == 'd'){
+			desligaSistema(flag);
+			return perfil;
+		}
+		if (perfil == 0){
+			limpa_lcd();
+			escreve_lcd("Senha Invalida!");
+			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
+			limpa_lcd();
+			escreve_lcd("Insira a senha:");
+			comando_lcd(0xC0);
+		}
+	}
+}
+void inicia(){
+	inicia_lcd_4bits();
+	limpa_lcd();
+
+	  //setando as linhas do teclado como 1
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
 }
 
 
-int main(void)
-{
-
+int main(void){
   HAL_Init();
-
   SystemClock_Config();
-
   MX_GPIO_Init();
 
-  inicia_lcd_4bits();
+  char perfil;
+  flag flag;
+  flag.sistema = 0;
+
+  inicia();
 
   while (1)
   {
-	  limpa_lcd();
-	  escreve_lcd("teste");
+	  perfil = login(&flag);
 
   }
-
 }
 
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -178,13 +239,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -194,13 +259,26 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA3
-                           PA4 PA5 */
+                           PA4 PA5 PA6 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5;
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB4 PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
