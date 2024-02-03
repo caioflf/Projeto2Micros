@@ -88,36 +88,7 @@ char compara_string(char* a, char* b){ // 0 se igual, 1 se diferente
 	return 0;
 }
 
-void imprimeZero(unsigned short valor){
-	if(valor<10)
-	letra_lcd('0');
-}
 
-void telaRepouso (){
-	limpa_lcd();
-	escreve_lcd("   ");
-	imprimeZero(horas);
-	imprimeASCII(horas);
-	escreve_lcd(":");
-
-	imprimeZero(minutos);
-	imprimeASCII(minutos);
-	escreve_lcd(" ");
-
-	imprimeZero(dia);
-	imprimeASCII(dia);
-	escreve_lcd("/");
-
-	imprimeZero(mes);
-	impimeASCII(mes);
-	comando_lcd(0xC0);
-	escreve_lcd("      ");
-
-	imprimeZero(temperatura);
-	imprimeASCII(temperatura);
-	escreve_lcd("°C");
-
-}
 void desligaSistema (flag *flag) {
 	if (flag->sistema == 1){
 		flag->sistema =0;
@@ -130,6 +101,39 @@ void ligaSistema(flag *flag) {
 		flag->sistema = 1;
 		HAL_Delay(1000);		// atraso de 1seg pra nao ser lido o que estiver sendo pressionado logo apos iniciar
 	}
+}
+
+void imprimeZero(unsigned short valor){
+	if(valor<10)
+	letra_lcd('0');
+}
+
+void telaRepouso(){
+	HAL_RTC_GetTime(RtcHandle, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(RtcHandle, &sDate, RTC_FORMAT_BIN);
+	limpa_lcd();
+	escreve_lcd("   ");
+	imprimeZero(sTime.Hours);
+	imprimeASCII(sTime.Hours);
+	escreve_lcd(":");
+
+	imprimeZero(sTime.Minutes);
+	imprimeASCII(sTime.Minutes);
+	escreve_lcd(" ");
+
+	imprimeZero(sDate.WeekDay);
+	imprimeASCII(sDate.WeekDay);
+	escreve_lcd("/");
+
+	imprimeZero(sDate.Month);
+	impimeASCII(sDate.Month);
+	comando_lcd(0xC0);
+	escreve_lcd("      ");
+
+	imprimeZero(98);
+	imprimeASCII(98);
+	escreve_lcd("°F");
+
 }
 
 void inicia(){
