@@ -1,106 +1,110 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+
 #include "main.h"
+#include "controleLCD.h"
+#include "teclado.h"
+#include "auxiliares.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_RTC_Init(void);
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+//loop principal
+void homicros(char *perfil, flag *flag){
+	char letra, verificacao, i = 1;
+	if (*perfil == 0 || *perfil == 'd'){
+		return;
+	}
+	while(1){
+		letra = scan(i);
+		verificacao = verifica_logoff();
+		if (verificacao == '#'){
+			limpa_lcd();
+			escreve_lcd("Logoff Realizado");
+			HAL_Delay(2000);
+			*perfil = 0;
+			return;
+		}
+		if (verificacao == '*'){
+			desligaSistema(flag);
+			*perfil = 'd';
+			return;
+		}
 
-/* USER CODE END 0 */
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+		i++;
+		if (i > 4) 	i = 1;
+	}
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+}
+
+void login (flag *flag){
+	char perfil = 0;
+	while(1){
+		perfil = ler_senha();
+
+		if (perfil == 1){
+			limpa_lcd();
+			escreve_lcd("Perfil 1 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 2){
+			limpa_lcd();
+			escreve_lcd("Perfil 2 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 3){
+			limpa_lcd();
+			escreve_lcd("Perfil ADM Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 0){
+			limpa_lcd();
+			escreve_lcd("Senha Invalida!");
+			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
+		}
+
+		homicros(&perfil, flag); // loop principal
+
+		if (perfil == 'd'){				//comando de desligar o sistema
+			desligaSistema(flag);
+			return;
+		}
+
+	}
+}
+
+
+int main(void){
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_RTC_Init();
-  /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
+  char verificacao;
+  flag flag;
+  flag.sistema = 0;
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
+  inicia();
 
-    /* USER CODE BEGIN 3 */
+
+  while (1) {
+	telaRepouso();
+  	verificacao = verifica_logoff();
+  	if (verificacao == '*'){
+  		desligaSistema(&flag);
+  	}
+  	if (verificacao == '#' && flag.sistema == 0){
+  		ligaSistema(&flag);
+  		login(&flag);
+  	}
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -111,7 +115,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -120,7 +124,6 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -150,11 +153,6 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
 static void MX_RTC_Init(void)
 {
 
