@@ -10,6 +10,7 @@ static void MX_GPIO_Init(void);
 static void MX_RTC_Init(void);
 
 
+
 //loop principal
 void homicros(char *perfil, flag *flag){
 	char letra, verificacao, i = 1;
@@ -86,6 +87,14 @@ int main(void){
   SystemClock_Config();
   MX_GPIO_Init();
   MX_RTC_Init();
+  unsigned short anoBase = 2000;
+  sDate.WeekDay = 1;
+  sDate.Month = 1;
+  sDate.Year = 24;
+  HAL_RTC_SetDate(RtcHandle, &sDate, RTC_FORMAT_BIN);
+  sTime.Hours = 1;
+  sTime.Minutes = 1;
+  HAL_RTC_SetTime(RtcHandle, &sTime, RTX_FORMAT_BIN);
 
   char verificacao;
   flag flag;
