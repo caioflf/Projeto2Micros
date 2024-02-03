@@ -19,127 +19,108 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-unsigned char teclado[4][3]={'1','2','3',
-	'4','5','6',
-	'7','8','9',
-	'*','0','#'
-};
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-#define RS GPIO_PIN_4						// Pino RS do display na PORTA4
-#define EN GPIO_PIN_5						// Pino EN do display na PORTA5
+/* USER CODE END Includes */
 
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+RTC_HandleTypeDef hrtc;
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_RTC_Init(void);
+/* USER CODE BEGIN PFP */
 
-void comando_lcd (unsigned char comando){ // comando em 4bits
-	HAL_GPIO_WritePin(GPIOA, RS, 0); // RS = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
+/* USER CODE END PFP */
 
-	//Parte alta do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<4));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<5));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<6));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<7));
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
-	//atualiza
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
+/* USER CODE END 0 */
 
-	// Parte baixa do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, comando&(1<<0));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, comando&(1<<1));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, comando&(1<<2));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, comando&(1<<3));
-
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-
-	HAL_Delay(1);
-
-}
-void letra_lcd (unsigned char letra){ // comando em 4bits
-	HAL_GPIO_WritePin(GPIOA, RS, 1); // RS = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1); // EN = 1
-
-	//Parte alta do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<4));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<5));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<6));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<7));
-
-	//atualiza
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-	HAL_GPIO_WritePin(GPIOA, EN, 1);// EN = 1
-
-	// Parte baixa do comando
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, letra&(1<<0));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, letra&(1<<1));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, letra&(1<<2));
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, letra&(1<<3));
-
-	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
-
-	HAL_Delay(1);
-
-}
-void escreve_lcd (char  *msg){ // escreve um string no lcd
-	unsigned char i=0;
-	while (msg[i] != 0){
-		letra_lcd(msg[i]);
-		i++;
-		HAL_Delay(1); // atraso 40us
-	}
-}
-void limpa_lcd(){
-	comando_lcd(0x01);
-	HAL_Delay(2);
-}
-void inicia_lcd_4bits(){ // inicializa em 4bits o lcd
-	HAL_Delay(15);
-	comando_lcd (0x28);
-	comando_lcd (0x0C);
-	comando_lcd (0x06);
-	comando_lcd (0x01);
-	HAL_Delay(2);//atraso_1ms64();
-}
-void desliga_lcd_4bits() {
-	HAL_Delay(15);
-	comando_lcd (0x08);
-	HAL_Delay(2);
-}
-
-
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
+  /* USER CODE BEGIN 1 */
 
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
   SystemClock_Config();
 
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_RTC_Init();
+  /* USER CODE BEGIN 2 */
 
-  inicia_lcd_4bits();
+  /* USER CODE END 2 */
 
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  limpa_lcd();
-	  escreve_lcd("teste");
+    /* USER CODE END WHILE */
 
+    /* USER CODE BEGIN 3 */
   }
-
+  /* USER CODE END 3 */
 }
 
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -161,6 +142,70 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RTC_Init(void)
+{
+
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef DateToUpdate = {0};
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+  /** Initialize RTC Only
+  */
+  hrtc.Instance = RTC;
+  hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
+  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;
+  if (HAL_RTC_Init(&hrtc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /* USER CODE BEGIN Check_RTC_BKUP */
+
+  /* USER CODE END Check_RTC_BKUP */
+
+  /** Initialize RTC and set the Time and Date
+  */
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
+
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
+  DateToUpdate.Month = RTC_MONTH_JANUARY;
+  DateToUpdate.Date = 0x1;
+  DateToUpdate.Year = 0x0;
+
+  if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+
+  /* USER CODE END RTC_Init 2 */
+
 }
 
 /**
@@ -178,13 +223,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -194,13 +243,26 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA3
-                           PA4 PA5 */
+                           PA4 PA5 PA6 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5;
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB4 PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
