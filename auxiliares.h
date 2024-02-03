@@ -18,6 +18,10 @@ void desligaSistema (flag *flag);
 
 void ligaSistema(flag *flag);
 
+void imprimeZero(unsigned short valor);
+
+void telaRepouso();
+
 void inicia();
 
 #endif
