@@ -17,17 +17,18 @@
 #define SENHA2 		"54321"					//Senha do operador 2
 #define SENHAADM	"00000"
 
-// Teclas do teclado
-
 
 // Funcao que verifica se é pressionada a tecla '*' por tempo suficiente
-unsigned char verificacao_tecla1(char tempo);
+unsigned char verificacao_asterisco(char tempo);
 
 // Funcao que verifica se é pressionada a tecla '#' por tempo suficiente
-unsigned char verificacao_tecla2(char tempo);
+unsigned char verificacao_hashtag(char tempo);
 
 //Funcao que verifia se é solicitado o logout, o desligue do sistema, ou a ligacao do sistema
-unsigned char verifica_login();
+unsigned char verifica_logoff();
+
+//Funcao debounce
+unsigned char debounce(unsigned char num_bit);
 
 // Funcao qu escaneia as linhas 1, 2, 3 e 4
 unsigned char scan(unsigned char linha);

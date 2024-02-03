@@ -89,3 +89,10 @@ void desliga_lcd_4bits() {
 	comando_lcd (0x08);
 	HAL_Delay(2);
 }
+
+
+void lcdSolicitaSenha(){
+	limpa_lcd();
+	escreve_lcd("Insira a senha:");
+	comando_lcd(0xC0); // nova linha
+}

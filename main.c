@@ -20,53 +20,15 @@
 #include "main.h"
 #include "controleLCD.h"
 #include "teclado.h"
-
+#include "auxiliares.h"
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
-typedef struct flag{				// Struct para dados dos clientes
-	char sistema;
-}flag;
-
-char compara_string(char* a, char* b){ // 0 se igual, 1 se diferente
-	char flag = 0;
-	while (*a != '\0' || *b != '\0') {
-		if (*a == *b) {
-			a++;
-			b++;
-		}
-		else if ((*a == '\0' && *b != '\0') || (*a != '\0' && *b == '\0') || *a != *b){// se forem diferentes
-			flag = 1;
-			return 1;
-		}
-	}
-	if (flag == 0) { // se forem iguais
-		return 0;
-	}
-}
-
-void desligaSistema (flag *flag) {
-	if (flag->sistema == 1){
-		desliga_lcd_4bits();
-		flag->sistema =0;
-	}
-}
-
-// Funcao para ligar o sistema quando solicitado
-void ligaSistema(flag *flag) {
-	if (flag->sistema == 0){
-		inicia_lcd_4bits();
-		escreve_lcd("Insira a senha:");
-		comando_lcd(0xC0); // nova linha
-		flag->sistema = 1;
-		atraso_1s();		// atraso de 1seg pra nao ser lido o que estiver sendo pressionado logo apos iniciar
-	}
-}
-
 char ler_senha(){
 	char perfil = 0; //perfil 0 (senha invalida), perfil 1 , perfil 2, perfil 3 (ADM)
 	char senha[10]={'\0'}, i=0, j=0, letra = '\0';
+	lcdSolicitaSenha();
 	while(letra!='#'&&(j<10)){
 		for(i=1;i<=4;i++){
 			letra=scan(i);
@@ -85,9 +47,7 @@ char ler_senha(){
 					j++;
 				}
 				j=0;
-				limpa_lcd();
-				escreve_lcd("Insira a senha:");
-				comando_lcd(0xC0);
+				lcdSolicitaSenha();
 			}
 		}
 	}
@@ -100,8 +60,8 @@ char ler_senha(){
 		return perfil;
 	}
 	if (!compara_string(senha, SENHAADM)){
-			perfil = 3;
-			return perfil;
+		perfil = 3;
+		return perfil;
 	}
 	else {
 		perfil = 0;
@@ -109,20 +69,43 @@ char ler_senha(){
 	}
 	return perfil;
 }
-void lcdEscreverSenha(){
-	limpa_lcd();
-	escreve_lcd("Insira a senha:");
-	comando_lcd(0xC0); // nova linha
+
+
+//loop principal
+void homicros(char *perfil, flag *flag){
+	char letra, verificacao, i = 1;
+	if (*perfil == 0 || *perfil == 'd'){
+		return;
+	}
+	while(1){
+		letra = scan(i);
+		verificacao = verifica_logoff();
+		if (verificacao == '#'){
+			limpa_lcd();
+			escreve_lcd("Logoff Realizado");
+			HAL_Delay(2000);
+			*perfil = 0;
+			return;
+		}
+		if (verificacao == '*'){
+			desligaSistema(flag);
+			*perfil = 'd';
+			return;
+		}
+
+
+
+		i++;
+		if (i > 4) 	i = 1;
+	}
+
 }
-char login (flag *flag){
+
+void login (flag *flag){
 	char perfil = 0;
-	lcdEscreverSenha();
 	while(1){
 		perfil = ler_senha();
-		if (perfil == 'd'){				//comando de desligar o sistema
-			desligaSistema(flag);
-			return perfil;
-		}
+
 		if (perfil == 1){
 			limpa_lcd();
 			escreve_lcd("Perfil 1 Logado!");
@@ -136,34 +119,26 @@ char login (flag *flag){
 
 		}
 		if (perfil == 3){
-				limpa_lcd();
-				escreve_lcd("Perfil ADM Logado!");
-				HAL_Delay(2000);
+			limpa_lcd();
+			escreve_lcd("Perfil ADM Logado!");
+			HAL_Delay(2000);
 
-		}
-		if (perfil == 'd'){
-			desligaSistema(flag);
-			return perfil;
 		}
 		if (perfil == 0){
 			limpa_lcd();
 			escreve_lcd("Senha Invalida!");
 			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
-			limpa_lcd();
-			escreve_lcd("Insira a senha:");
-			comando_lcd(0xC0);
+			lcdSolicitaSenha();
 		}
-	}
-}
-void inicia(){
-	inicia_lcd_4bits();
-	limpa_lcd();
 
-	  //setando as linhas do teclado como 1
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+		homicros(&perfil, flag); // loop principal
+
+		if (perfil == 'd'){				//comando de desligar o sistema
+			desligaSistema(flag);
+			return;
+		}
+
+	}
 }
 
 
@@ -172,16 +147,22 @@ int main(void){
   SystemClock_Config();
   MX_GPIO_Init();
 
-  char perfil;
+  char verificacao;
   flag flag;
   flag.sistema = 0;
 
   inicia();
 
-  while (1)
-  {
-	  perfil = login(&flag);
 
+  while (1) {
+  	verificacao = verifica_logoff();
+  	if (verificacao == '*'){
+  		desligaSistema(&flag);
+  	}
+  	if (verificacao == '#' && flag.sistema == 0){
+  		ligaSistema(&flag);
+  		login(&flag);
+  	}
   }
 }
 
