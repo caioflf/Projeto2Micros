@@ -39,7 +39,7 @@ void comando_lcd (unsigned char comando){ // comando em 4bits
 
 	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
 
-	HAL_Delay(1);
+	HAL_Delay(0.004);  // CUIDADO COM ISSO AQUI NAO SEI SE FUNCIONA
 
 }
 void letra_lcd (unsigned char letra){ // comando em 4bits
@@ -61,7 +61,7 @@ void letra_lcd (unsigned char letra){ // comando em 4bits
 
 	HAL_GPIO_WritePin(GPIOA, EN, 0);// EN = 0
 
-	HAL_Delay(1);
+	HAL_Delay(0.004); // CUIDADO COM ISSO AQUI NAO SEI SE FUNCIONA
 
 }
 void escreve_lcd (char  *msg){ // escreve um string no lcd
@@ -83,11 +83,6 @@ void inicia_lcd_4bits(){ // inicializa em 4bits o lcd
 	comando_lcd (0x06);
 	comando_lcd (0x01);
 	HAL_Delay(2);//atraso_1ms64();
-}
-void desliga_lcd_4bits() {
-	HAL_Delay(15);
-	comando_lcd (0x08);
-	HAL_Delay(2);
 }
 
 

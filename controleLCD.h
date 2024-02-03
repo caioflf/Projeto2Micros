@@ -25,8 +25,6 @@ void limpa_lcd();
 
 void inicia_lcd_4bits();
 
-void desliga_lcd_4bits();
-
 void lcdSolicitaSenha();
 
 #endif

@@ -10,11 +10,71 @@
 /*=================================================================================================*/
 
 #include "main.h"
+#include "variaveisPseudoMain.h"
+#include "pseudoMain.h"
 #include "controleLCD.h"
+#include "teclado.h"
 #include "auxiliares.h"
 
 
 /*====================================  Funçoes Auxiliares =======================================*/
+
+extern RTC_HandleTypeDef hrtc;
+extern RTC_TimeTypeDef sTime;
+extern RTC_DateTypeDef DateToUpdate;
+
+void converteASCII (unsigned short valor, char *stringConvertida){
+	char i = 0, b = 0;
+	if (valor > 65534){
+		stringConvertida[0] = '*';
+		stringConvertida[1] = '\0';
+		return;
+	}
+	if (valor == 0){
+		stringConvertida[0] = '0';
+		stringConvertida[1] = '\0';
+		return;
+	}
+
+	unsigned short divisor = 10;
+	unsigned short auxiliar = 0;
+	// associa cada caractere a seu respectivo valor em ASCII
+	for (i = 0; i < 5; i++){
+		auxiliar = valor%(divisor);
+		valor -= auxiliar;
+		valor/=10;
+		auxiliar += 48;
+		stringConvertida[i]=auxiliar;
+		auxiliar = 0;
+	}
+	while (stringConvertida[i-1] == '0'){
+		stringConvertida[i-1] = '\0';
+		i--;
+	}
+	i--;
+
+	char inicio = 0;
+	char fim = i;
+	// Reordena a string
+	while (inicio < fim){
+		char letraAux = stringConvertida[inicio];
+		stringConvertida[inicio] = stringConvertida[fim];
+		stringConvertida[fim] = letraAux;
+		inicio++;
+		fim--;
+	}
+	if (stringConvertida[0]=='\0')
+	stringConvertida[0] = '0';
+
+	stringConvertida[5] = '\0';
+	return;
+}
+
+void imprimeASCII (unsigned short valor){
+	char string[6];
+	converteASCII(valor, string);
+	escreve_lcd(string);
+}
 
 char compara_string(char* a, char* b){ // 0 se igual, 1 se diferente
 	char flag = 0;
@@ -34,9 +94,9 @@ char compara_string(char* a, char* b){ // 0 se igual, 1 se diferente
 	return 0;
 }
 
+
 void desligaSistema (flag *flag) {
 	if (flag->sistema == 1){
-		desliga_lcd_4bits();
 		flag->sistema =0;
 	}
 }
@@ -44,21 +104,116 @@ void desligaSistema (flag *flag) {
 // Funcao para ligar o sistema quando solicitado
 void ligaSistema(flag *flag) {
 	if (flag->sistema == 0){
-		inicia_lcd_4bits();
-		escreve_lcd("Insira a senha:");
-		comando_lcd(0xC0); // nova linha
 		flag->sistema = 1;
 		HAL_Delay(1000);		// atraso de 1seg pra nao ser lido o que estiver sendo pressionado logo apos iniciar
 	}
 }
 
+void imprimeZero(unsigned short valor){
+	if(valor<10)
+	letra_lcd('0');
+}
+
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
+	short valorLidoTemperatura, temperaturaCelsius;
+	float aux;
+
+	//adquirindo tempo e data
+	HAL_RTC_GetTime(hrtc, sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
+
+	if (sTime->Seconds == *segundo_ant)
+		return;
+	*segundo_ant = sTime->Seconds;
+
+	// adquirindo temperatura
+	HAL_ADC_PollForConversion(hadc1,1000);
+	valorLidoTemperatura = HAL_ADC_GetValue(hadc1);
+	aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;
+
+	limpa_lcd();
+	escreve_lcd(" ");
+	imprimeZero(sTime->Hours);
+	imprimeASCII(sTime->Hours);
+	escreve_lcd(":");
+
+	imprimeZero(sTime->Minutes);
+	imprimeASCII(sTime->Minutes);
+	escreve_lcd(":");
+
+	imprimeZero(sTime->Seconds);
+	imprimeASCII(sTime->Seconds);
+	escreve_lcd(" ");
+
+	imprimeZero(DateToUpdate->Date);
+	imprimeASCII(DateToUpdate->Date);
+	escreve_lcd("/");
+
+	imprimeZero(DateToUpdate->Month);
+	imprimeASCII(DateToUpdate->Month);
+	comando_lcd(0xC0);
+
+	escreve_lcd("      ");
+	imprimeZero(temperaturaCelsius);
+	imprimeASCII(temperaturaCelsius);
+	letra_lcd(223);
+	escreve_lcd("C");
+
+}
+
 void inicia(){
 	inicia_lcd_4bits();
-	limpa_lcd();
 
 	  //setando as linhas do teclado como 1
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+}
+
+char ler_senha(){
+	char perfil = 0; //perfil 0 (senha invalida), perfil 1 , perfil 2, perfil 3 (ADM)
+	char senha[10]={'\0'}, i=0, j=0, letra = '\0';
+	lcdSolicitaSenha();
+	while(letra!='#'&&(j<10)){
+		for(i=1;i<=4;i++){
+			letra=scan(i);
+			if (letra == 'd')
+			return letra;			//se scan retornar valor atribuido ao comando de desligamento, interrompe a funcao aqui
+
+			if('\0'!=letra && '*' != letra && '#' != letra){
+				letra_lcd('*');
+				senha[j] = letra;
+				j++;
+			}
+			else if (letra == '*'){
+				j = 0;
+				while (senha[j+1]!='\0'){
+					senha[j] = '\0';
+					j++;
+				}
+				j=0;
+				lcdSolicitaSenha();
+			}
+		}
+	}
+	if (!compara_string(senha, SENHA1)){
+		perfil = 1;
+		return perfil;
+	}
+	if (!compara_string(senha, SENHA2)){
+		perfil = 2;
+		return perfil;
+	}
+	if (!compara_string(senha, SENHAADM)){
+		perfil = 3;
+		return perfil;
+	}
+	else {
+		perfil = 0;
+		return perfil;
+	}
+	return perfil;
 }

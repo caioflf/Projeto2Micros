@@ -10,8 +10,8 @@
 /*=================================================================================================*/
 
 #include "main.h"
+#include "variaveisPseudoMain.h"
 #include "teclado.h"
-
 
 // Teclas do Teclado
 unsigned char teclado[4][3]={
@@ -101,6 +101,7 @@ unsigned char debounce(unsigned char num_bit){
     }
     return ultimo;
 }
+
 // Funcao qu escaneia as linhas 1, 2, 3 e 4
 //LINHAS  PORT B3 B4 B5 B6
 //COLUNAS PORT B7 B8 B9
