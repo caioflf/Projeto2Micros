@@ -9,22 +9,16 @@
 // Thiago Arndt Schimit (00333710)
 /*=================================================================================================*/
 
-#ifndef _CONTROLE_LCD_H_
-#define _CONTROLE_LCD_H_
+#ifndef SRC_AUXILIARES_H_
+#define SRC_AUXILIARES_H_
 
-#define RS GPIO_PIN_4						// Pino RS do display na PORTA4
-#define EN GPIO_PIN_5						// Pino EN do display na PORTA5
+char compara_string(char* a, char* b);
 
-void comando_lcd (unsigned char comando);
+void desligaSistema (flag *flag);
 
-void letra_lcd (unsigned char comando);
+void ligaSistema(flag *flag);
 
-void escreve_lcd (char  *msg);
-
-void limpa_lcd();
-
-void inicia_lcd_4bits();
-
-void lcdSolicitaSenha();
+void inicia();
 
 #endif
+

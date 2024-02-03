@@ -1,41 +1,114 @@
-/*=================================================================================================*/
-//	UNIVERSIDADE FEDERAL DO RIO GRANDE DO SUL
-//	ENG04475 - Microprocessadores I (2023/2)
-//	Projeto 2 - HOMICROS
-//
-// Alunos:
-// Bruno Gevehr Fernandes (00335299)
-// Caio Fernando Leite França (00330098)
-// Thiago Arndt Schimit (00333710)
-/*=================================================================================================*/
+
 #include "main.h"
-#include "atrasos.h"
-#include "teclado.h"
 #include "controleLCD.h"
+#include "teclado.h"
+#include "auxiliares.h"
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
-int main(void)
-{
 
-  HAL_Init();
 
-  SystemClock_Config();
+//loop principal
+void homicros(char *perfil, flag *flag){
+	char letra, verificacao, i = 1;
+	if (*perfil == 0 || *perfil == 'd'){
+		return;
+	}
+	while(1){
+		letra = scan(i);
+		verificacao = verifica_logoff();
+		if (verificacao == '#'){
+			limpa_lcd();
+			escreve_lcd("Logoff Realizado");
+			HAL_Delay(2000);
+			*perfil = 0;
+			return;
+		}
+		if (verificacao == '*'){
+			desligaSistema(flag);
+			*perfil = 'd';
+			return;
+		}
 
-  MX_GPIO_Init();
 
-  inicia_lcd_4bits();
 
-  while (1)
-  {
-	  limpa_lcd();
-	  escreve_lcd("teste");
 
-  }
+		i++;
+		if (i > 4) 	i = 1;
+	}
 
 }
 
+void login (flag *flag){
+	char perfil = 0;
+	while(1){
+		perfil = ler_senha();
+
+		if (perfil == 1){
+			limpa_lcd();
+			escreve_lcd("Perfil 1 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 2){
+			limpa_lcd();
+			escreve_lcd("Perfil 2 Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 3){
+			limpa_lcd();
+			escreve_lcd("Perfil ADM Logado!");
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 0){
+			limpa_lcd();
+			escreve_lcd("Senha Invalida!");
+			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
+		}
+
+		homicros(&perfil, flag); // loop principal
+
+		if (perfil == 'd'){				//comando de desligar o sistema
+			desligaSistema(flag);
+			return;
+		}
+
+	}
+}
+
+
+int main(void){
+  HAL_Init();
+  SystemClock_Config();
+  MX_GPIO_Init();
+
+  char verificacao;
+  flag flag;
+  flag.sistema = 0;
+
+  inicia();
+
+
+  while (1) {
+	telaRepouso();
+  	verificacao = verifica_logoff();
+  	if (verificacao == '*'){
+  		desligaSistema(&flag);
+  	}
+  	if (verificacao == '#' && flag.sistema == 0){
+  		ligaSistema(&flag);
+  		login(&flag);
+  	}
+  }
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -86,13 +159,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -102,13 +179,26 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA1 PA2 PA3
-                           PA4 PA5 */
+                           PA4 PA5 PA6 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5;
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB4 PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
