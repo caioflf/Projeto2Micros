@@ -1,0 +1,17 @@
+Depois de tanto fuçar nas configurações das pinagens eu me estressei de ter que ficar mudando na main e olhando
+exatamente o que alterava, então criei um arquivo pseudoMain.c que seria uma main ideal sem todas essas palhaçadas de
+ter que ficar reescrevendo ela quando muda as configuraçoes do processador.
+
+As unicas coisas que tem que mudar sempre que for alteradas as configuraçoes eu deixo listado abaixo:
+
+1. Tem que declarar as structs sTime e DateToUpdate (essa última deveria ser o sDate mas por algum motivo o cube declara com o nome que eu escrevi)
+   Testei algumas vezes e aparentemente ESSAS STRUCTS ele não apaga, não faço ideia do pq;
+
+2. Tem que chamar a funçao pseudoMain e passar como parametro as structs declaradas acima e o hrtc;
+
+Outra coisa que eu fiz também foi retirar o que estava sendo declarado no main.h e criei um arquivo variaveisPseudoMain.h onde
+são declaradas até o momento as senhas e a struct flag, caso queiram criar mais declaraçoes/defines pseudo globais, criem neste header.
+
+Não tenho ideia se está funcionando pois não consigo testar, primeiro testem retirando (comentando) a funçao telaRepouso para ver se esta
+normal como antes (quando estava tudo declarado na main.c e na main.h), se sim ai testem com a funçao telaRepouso, digo isso pois esta funçao
+chama ass funcoes GetTime e GetDate que não tenho certeza como funciona ou se estou usando elas adequadamente.
