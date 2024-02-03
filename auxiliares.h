@@ -12,6 +12,10 @@
 #ifndef SRC_AUXILIARES_H_
 #define SRC_AUXILIARES_H_
 
+void converteASCII (unsigned short valor, char *stringConvertida);
+
+void imprimeASCII (unsigned short valor);
+
 char compara_string(char* a, char* b);
 
 void desligaSistema (flag *flag);
@@ -20,7 +24,7 @@ void ligaSistema(flag *flag);
 
 void imprimeZero(unsigned short valor);
 
-void telaRepouso();
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, short temp);
 
 void inicia();
 

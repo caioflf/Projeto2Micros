@@ -12,11 +12,6 @@
 #ifndef _TECLADO_H_
 #define _TECLADO_H_
 
-// Senhas
-#define SENHA1 		"12345"					//Senha do operador 1
-#define SENHA2 		"54321"					//Senha do operador 2
-#define SENHAADM	"00000"
-
 
 // Funcao que verifica se é pressionada a tecla '*' por tempo suficiente
 unsigned char verificacao_asterisco(char tempo);

@@ -10,12 +10,18 @@
 /*=================================================================================================*/
 
 #include "main.h"
+#include "variaveisPseudoMain.h"
+#include "pseudoMain.h"
 #include "controleLCD.h"
 #include "teclado.h"
 #include "auxiliares.h"
 
 
 /*====================================  Funçoes Auxiliares =======================================*/
+
+extern RTC_HandleTypeDef hrtc;
+extern RTC_TimeTypeDef sTime;
+extern RTC_DateTypeDef DateToUpdate;
 
 void converteASCII (unsigned short valor, char *stringConvertida){
 	char i = 0, b = 0;
@@ -108,30 +114,32 @@ void imprimeZero(unsigned short valor){
 	letra_lcd('0');
 }
 
-void telaRepouso(){
-	HAL_RTC_GetTime(RtcHandle, &sTime, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(RtcHandle, &sDate, RTC_FORMAT_BIN);
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, short temp){
+
+	HAL_RTC_GetTime(hrtc, sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
+
 	limpa_lcd();
 	escreve_lcd("   ");
-	imprimeZero(sTime.Hours);
-	imprimeASCII(sTime.Hours);
+	imprimeZero(sTime->Hours);
+	imprimeASCII(sTime->Hours);
 	escreve_lcd(":");
 
-	imprimeZero(sTime.Minutes);
-	imprimeASCII(sTime.Minutes);
+	imprimeZero(sTime->Minutes);
+	imprimeASCII(sTime->Minutes);
 	escreve_lcd(" ");
 
-	imprimeZero(sDate.WeekDay);
-	imprimeASCII(sDate.WeekDay);
+	imprimeZero(DateToUpdate->WeekDay);
+	imprimeASCII(DateToUpdate->WeekDay);
 	escreve_lcd("/");
 
-	imprimeZero(sDate.Month);
-	impimeASCII(sDate.Month);
+	imprimeZero(DateToUpdate->Month);
+	imprimeASCII(DateToUpdate->Month);
 	comando_lcd(0xC0);
 	escreve_lcd("      ");
 
-	imprimeZero(98);
-	imprimeASCII(98);
+	imprimeZero(temp);
+	imprimeASCII(temp);
 	escreve_lcd("°F");
 
 }

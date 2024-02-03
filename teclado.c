@@ -10,6 +10,7 @@
 /*=================================================================================================*/
 
 #include "main.h"
+#include "variaveisPseudoMain.h"
 #include "teclado.h"
 
 // Teclas do Teclado
