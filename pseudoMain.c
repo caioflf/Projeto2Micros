@@ -5,9 +5,11 @@
 #include "teclado.h"
 #include "auxiliares.h"
 
+
 //loop principal
 void homicros(char *perfil, flag *flag){
 	char letra, verificacao, i = 1;
+	indice indice;
 	if (*perfil == 0 || *perfil == 'd'){
 		return;
 	}
@@ -27,7 +29,8 @@ void homicros(char *perfil, flag *flag){
 			return;
 		}
 
-
+		navegacaoMenu(flag, &indice, letra, *perfil);
+		menu(flag, &indice);
 
 
 		i++;
@@ -38,6 +41,8 @@ void homicros(char *perfil, flag *flag){
 
 void login (flag *flag){
 	char perfil = 0;
+	lcdSolicitaSenha();
+	HAL_Delay(1000);
 	while(1){
 		perfil = ler_senha();
 
@@ -53,7 +58,7 @@ void login (flag *flag){
 			HAL_Delay(2000);
 
 		}
-		if (perfil == 3){
+		if (perfil == ADM){
 			limpa_lcd();
 			escreve_lcd("Perfil ADM Logado!");
 			HAL_Delay(2000);
@@ -76,21 +81,22 @@ void login (flag *flag){
 }
 
 
-int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate){
+int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, ADC_HandleTypeDef *hadc1){
 
 
-  //unsigned short anoBase = 2000;
 
-  HAL_RTC_SetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
-  DateToUpdate->WeekDay= 1;
-  DateToUpdate->Month = 1;
+  DateToUpdate->Date= 22;
+  DateToUpdate->Month = 10;
   DateToUpdate->Year = 24;
+  HAL_RTC_SetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
 
+  sTime->Hours = 9;
+  sTime->Minutes = 15;
   HAL_RTC_SetTime(hrtc, sTime, RTC_FORMAT_BIN);
-  sTime->Hours = 1;
-  sTime->Minutes = 1;
 
-  unsigned char verificacao;
+  HAL_ADC_Start(hadc1);
+
+  unsigned char verificacao, segundo_ant = 0;
   flag flag;
   flag.sistema = 0;
 
@@ -99,7 +105,7 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
 
   while (1) {
 
-	telaRepouso(hrtc, sTime, DateToUpdate, 98);
+	telaRepouso(hrtc, sTime, DateToUpdate, &segundo_ant, hadc1);
   	verificacao = verifica_logoff();
   	if (verificacao == '*'){
   		desligaSistema(&flag);

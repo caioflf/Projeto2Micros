@@ -24,9 +24,14 @@ void ligaSistema(flag *flag);
 
 void imprimeZero(unsigned short valor);
 
-void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, short temp);
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1);
 
 void inicia();
+
+void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil);
+
+void menu(flag *flag, indice *indice);
 
 #endif
 

@@ -114,33 +114,52 @@ void imprimeZero(unsigned short valor){
 	letra_lcd('0');
 }
 
-void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, short temp){
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
+	short valorLidoTemperatura, temperaturaCelsius;
+	float aux;
 
+	//adquirindo tempo e data
 	HAL_RTC_GetTime(hrtc, sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
 
+	if (sTime->Seconds == *segundo_ant)
+		return;
+	*segundo_ant = sTime->Seconds;
+
+	// adquirindo temperatura
+	HAL_ADC_PollForConversion(hadc1,1000);
+	valorLidoTemperatura = HAL_ADC_GetValue(hadc1);
+	aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;
+
 	limpa_lcd();
-	escreve_lcd("   ");
+	escreve_lcd(" ");
 	imprimeZero(sTime->Hours);
 	imprimeASCII(sTime->Hours);
 	escreve_lcd(":");
 
 	imprimeZero(sTime->Minutes);
 	imprimeASCII(sTime->Minutes);
+	escreve_lcd(":");
+
+	imprimeZero(sTime->Seconds);
+	imprimeASCII(sTime->Seconds);
 	escreve_lcd(" ");
 
-	imprimeZero(DateToUpdate->WeekDay);
-	imprimeASCII(DateToUpdate->WeekDay);
+	imprimeZero(DateToUpdate->Date);
+	imprimeASCII(DateToUpdate->Date);
 	escreve_lcd("/");
 
 	imprimeZero(DateToUpdate->Month);
 	imprimeASCII(DateToUpdate->Month);
 	comando_lcd(0xC0);
-	escreve_lcd("      ");
 
-	imprimeZero(temp);
-	imprimeASCII(temp);
-	escreve_lcd("°F");
+	escreve_lcd("      ");
+	imprimeZero(temperaturaCelsius);
+	imprimeASCII(temperaturaCelsius);
+	letra_lcd(223);
+	escreve_lcd("C");
 
 }
 
@@ -189,7 +208,7 @@ char ler_senha(){
 		return perfil;
 	}
 	if (!compara_string(senha, SENHAADM)){
-		perfil = 3;
+		perfil = ADM;
 		return perfil;
 	}
 	else {
@@ -198,3 +217,85 @@ char ler_senha(){
 	}
 	return perfil;
 }
+
+// Menu interativo para o usuario
+void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
+
+	if (letra == '8'){			// ir para "cima"
+		if (!(indice->menu))			// nao faz nada
+		return;
+
+		if (indice->menu == 1){			// ja estava mostrando o cliente no topo, agora mostra a direção a ser seguida
+			indice->menu -= 1;
+			indice->info = 0;
+			return;
+		}
+
+		indice->menu -= 1;
+		indice->info = 0;
+		return;
+	}
+
+	if (letra == '0'){			// ir para "baixo"
+		if ((indice->menu == INDICE_MAX_USUARIO) && (perfil != ADM))
+		return;
+
+		if (indice->menu == INDICE_MAX_ADM)
+		return;
+
+		indice->menu += 1;
+		indice->info = 0;
+		return;
+	}
+
+	if (letra == '7'){			// ir para "esquerda"
+		if (!(indice->info))
+		return;
+
+		indice->info-=1;
+		return;
+	}
+
+	if (letra == '9'){		// ir para "direita"
+		if (indice->menu == 3){
+			 if(indice->info == 1)
+				 return;
+
+			 indice->info += 1;
+			return;
+		}
+
+		if (indice->menu == 4){
+				if(perfil != ADM)
+				return;
+
+				if(indice->info == 2)
+				return;
+
+				indice->info += 1;
+				return;
+		}
+
+		if ((indice->menu == 5)||(indice->menu == 6)){
+				if(indice->info == 1)
+				return;
+
+				indice->info += 1;
+				return;
+		}
+		return;
+	}
+
+	return;
+}
+
+void menu(flag *flag, indice *indice){
+	limpa_lcd();
+	imprimeASCII(indice->menu);
+	comando_lcd(0xC0);
+	imprimeASCII(indice->info);
+}
+
+
+
+
