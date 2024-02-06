@@ -5,6 +5,71 @@
 #include "teclado.h"
 #include "auxiliares.h"
 
+void cortinaAutomatica(flag *flag, char perfil, ADC_HandleTypeDef *hadc1){
+
+	if(!flag->cortinaAuto)
+	return;
+
+	int valorLidoTemperatura, temperaturaCelsius;
+	float aux;
+
+	HAL_ADC_PollForConversion(hadc1,1000);
+	valorLidoTemperatura = HAL_ADC_GetValue(hadc1);
+	/*aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;*/
+	aux = ((((float)valorLidoTemperatura * 3.3 / 4096) - 0.76)/0.0025 + 25)/10;
+	temperaturaCelsius = (int)aux;
+
+
+	if(perfil == 1){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura1+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura1-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			return;
+		}
+		return;
+	}
+	if(perfil == 2){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura2+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura2-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			return;
+		}
+		return;
+	}
+	if(perfil == 3){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura3+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura3-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			return;
+		}
+		return;
+	}
+}
 
 //loop principal
 void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
@@ -19,30 +84,36 @@ void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef
 		return;
 	}
 	while(1){
-		letra = scan(i);
-		verificacao = verifica_logoff();
-		if (verificacao == '#'){
-			limpa_lcd();
-			escreve_lcd("Logoff Realizado");
-			HAL_Delay(2000);
-			*perfil = 0;
-			flag->atualizarTela = 1;
-			return;
-		}
-		if (verificacao == '*'){
-			desligaSistema(flag);
-			*perfil = 'd';
-			return;
+
+
+		for (i = 1; i <= 2; i++){
+			letra = scan(i);
+			navegacaoMenu(flag, &indice, letra, *perfil);
+			menu(flag, &indice, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, letra, htim3, hadc2, *perfil);
+
+			indice.ultimoMenu = indice.menu;
+			indice.ultimoInfo = indice.info;
 		}
 
-		navegacaoMenu(flag, &indice, letra, *perfil);
-		menu(flag, &indice, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, letra, htim3, hadc2, *perfil);
+		cortinaAutomatica(flag, *perfil, hadc1);
 
-		indice.ultimoMenu = indice.menu;
-		indice.ultimoInfo = indice.info;
-
-		i++;
-		if (i > 4) 	i = 1;
+		for (i = 3; i <= 4; i++){
+			letra = scan(i);
+			verificacao = verifica_logoff();
+			if (verificacao == '#'){
+				limpa_lcd();
+				escreve_lcd("Logoff Realizado");
+				HAL_Delay(2000);
+				*perfil = 0;
+				flag->atualizarTela = 1;
+				return;
+			}
+			if (verificacao == '*'){
+				desligaSistema(flag);
+				*perfil = 'd';
+				return;
+			}
+		}
 	}
 
 }
@@ -116,12 +187,25 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
   HAL_ADC_Start(hadc1);
 
   unsigned char verificacao, segundo_ant = 0;
+
   flag flag;
   flag.sistema = 0;
   flag.ativaPerfil1 = 1;
   flag.ativaPerfil2 = 1;
   flag.atualizarTela = 1;
-  inicia(htim3, hadc1);
+  flag.luz1 = 0;
+  flag.luz2 = 0;
+  flag.luz3 = 0;
+  flag.cortina = 0;
+  flag.cortinaAuto = 0;
+  flag.valorTemperatura1 = 25;
+  flag.valorTemperatura2 = 25;
+  flag.valorTemperatura3 = 25;
+  flag.valor_ad1 = 0;
+  flag.valor_ad2 = 0;
+  flag.valor_ad3 = 0;
+
+  inicia(htim3, hadc2);
 
 
   while (1) {

@@ -28,5 +28,14 @@ unsigned char debounce(unsigned char num_bit);
 // Funcao qu escaneia as linhas 1, 2, 3 e 4
 unsigned char scan(unsigned char linha);
 
+unsigned char debounceDimming(unsigned char num_bit);
+
+unsigned char scanDimming(unsigned char linha);
+
+unsigned char scanTemp(unsigned char linha);
+
+unsigned char scanData(unsigned char linha);
+
+unsigned char scanHora(unsigned char linha);
 
 #endif
