@@ -15,6 +15,11 @@ typedef struct flag{				// Struct para flags
 	char luz3;
 	char cortina;
 	char atualizarTela;
+	char ativaPerfil1;
+	char ativaPerfil2;
+	unsigned short valor_ad1;
+	unsigned short valor_ad2;
+	unsigned short valor_ad3;
 }flag;
 
 typedef struct indices{				// Struct para os indices

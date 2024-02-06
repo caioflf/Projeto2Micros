@@ -165,8 +165,14 @@ void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDe
 
 }
 
-void inicia(){
+void inicia(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc1){
 	inicia_lcd_4bits();
+
+	//liga pwm
+	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_3);
+
+	//calibra leitura do potenciometro
+	HAL_ADCEx_Calibration_Start(hadc1);
 
 	  //setando as linhas do teclado como 1
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
@@ -218,6 +224,24 @@ char ler_senha(){
 		return perfil;
 	}
 	return perfil;
+}
+
+unsigned short configura_dimmer(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
+	short valor_ad;
+	char letra = 0;
+	limpa_lcd();
+	escreve_lcd("Configurando Luz");
+	comando_lcd(0xC0);
+	escreve_lcd("Salvar (3)");
+	while(letra != '3'){
+		letra = scan (1);
+		HAL_ADC_Start(hadc2);
+		HAL_ADC_PollForConversion(hadc2, 1);
+		valor_ad = HAL_ADC_GetValue(hadc2);
+		TIM3->CCR3 = (valor_ad<<4);
+		HAL_Delay(1);
+	}
+	return valor_ad;
 }
 
 // Menu interativo para o usuario
@@ -292,7 +316,7 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 }
 
 void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra){
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2, char perfil){
 	if (flag->atualizarTela)
 		flag->atualizarTela = 0;
 	else if ((indice->menu == indice->ultimoMenu || indice->info == indice->ultimoInfo) && letra == '\0')
@@ -351,16 +375,95 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 				}
 				break;
 
-		case 3: //luz quarto PWM
+		case 3: limpa_lcd();
+				if (indice->info == 0){
+					escreve_lcd("Luz Quarto: ");
+					if (!flag->luz3){
+						escreve_lcd("OFF");
+						comando_lcd(0xC0);
+						escreve_lcd("Ligar: (3)");
+						if (letra == '3'){			// desliga
+							if (perfil == 1){
+								TIM3->CCR3 = (flag->valor_ad1<<4);
+							} else if (perfil == 2){
+								TIM3->CCR3 = (flag->valor_ad2<<4);
+							} else if (perfil == 3){
+								TIM3->CCR3 = (flag->valor_ad3<<4);
+							}
+							flag->luz3 = 1;
+							flag->atualizarTela = 1;
+						}
+					} else if (flag->luz3){
+						escreve_lcd("ON");
+						comando_lcd(0xC0);
+						escreve_lcd("Desligar: (1)");
+						if (letra == '1'){			// desliga
+							TIM3->CCR3 = (0<<4);
+							flag->luz3 = 0;
+							flag->atualizarTela = 1;
+						}
+					}
+				} else if (indice->info == 1){
+					escreve_lcd("Configurar Luz:");
+					comando_lcd(0xC0);
+					escreve_lcd("Confirma (3)");
+						if (letra == '3'){
+							if (perfil == 1){
+								flag->valor_ad1 = configura_dimmer(htim3, hadc2);
+							} else if (perfil == 2){
+								flag->valor_ad2 = configura_dimmer(htim3, hadc2);
+							} else if (perfil == 3){
+								flag->valor_ad3 = configura_dimmer(htim3, hadc2);
+							}
+							flag->luz3 = 1;
+							flag->atualizarTela = 1;
+						}
+				}
 				break;
 
-		case 4: // cortina
+		case 4: limpa_lcd();
+				escreve_lcd("Cortina");
+
 				break;
 
-		case 5: // desabilita usuario
+		case 5: limpa_lcd();
+				if (indice->info == 0){
+					escreve_lcd("Perfil 1:");
+					comando_lcd(0xC0);
+					if (flag->ativaPerfil1){
+						escreve_lcd("Bloquear (3)");
+						if (letra == '3'){
+							flag->ativaPerfil1 = 0;
+							flag->atualizarTela = 1;
+						}
+					}else if (!flag->ativaPerfil1){
+						escreve_lcd("Desbloquear (1)");
+						if (letra == '1'){
+							flag->ativaPerfil1 = 1;
+							flag->atualizarTela = 1;
+						}
+					}
+				} else if (indice->info == 1){
+					escreve_lcd("Perfil 2:");
+					comando_lcd(0xC0);
+					if (flag->ativaPerfil2){
+						escreve_lcd("Bloquear (3)");
+						if (letra == '3'){
+							flag->ativaPerfil2 = 0;
+							flag->atualizarTela = 1;
+						}
+					}else if (!flag->ativaPerfil2){
+						escreve_lcd("Desbloquear (1)");
+						if (letra == '1'){
+							flag->ativaPerfil2 = 1;
+							flag->atualizarTela = 1;
+						}
+					}
+				}
 				break;
 
-		case 6: // muda data ou hora
+		case 6: limpa_lcd();
+				escreve_lcd("Mudar Hora");
 				break;
 
 		default: break;

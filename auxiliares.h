@@ -27,12 +27,14 @@ void imprimeZero(unsigned short valor);
 void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
 				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1);
 
-void inicia();
+void inicia(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc1);
+
+unsigned short configura_dimmer(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2);
 
 void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil);
 
 void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra);
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2, char perfil);
 
 #endif
 

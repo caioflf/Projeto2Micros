@@ -8,13 +8,13 @@
 
 //loop principal
 void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
 	char letra, verificacao, i = 1;
 	indice indice;
 	indice.menu = 0;
 	indice.info = 0;
-	indice.ultimoMenu = 1;
-	indice.ultimoInfo = 1;
+	indice.ultimoMenu = 0;
+	indice.ultimoInfo = 0;
 	if (*perfil == 0 || *perfil == 'd'){
 		return;
 	}
@@ -26,6 +26,7 @@ void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef
 			escreve_lcd("Logoff Realizado");
 			HAL_Delay(2000);
 			*perfil = 0;
+			flag->atualizarTela = 1;
 			return;
 		}
 		if (verificacao == '*'){
@@ -35,7 +36,7 @@ void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef
 		}
 
 		navegacaoMenu(flag, &indice, letra, *perfil);
-		menu(flag, &indice, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, letra);
+		menu(flag, &indice, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, letra, htim3, hadc2, *perfil);
 
 		indice.ultimoMenu = indice.menu;
 		indice.ultimoInfo = indice.info;
@@ -47,22 +48,37 @@ void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef
 }
 
 void login (flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-			unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
+			unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
 	char perfil = 0;
 	lcdSolicitaSenha();
 	HAL_Delay(1000);
 	while(1){
 		perfil = ler_senha();
 
+		if (perfil == 0){
+					limpa_lcd();
+					escreve_lcd("Senha Invalida!");
+					HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
+		}
 		if (perfil == 1){
 			limpa_lcd();
-			escreve_lcd("Perfil 1 Logado!");
+			if (flag->ativaPerfil1){
+				escreve_lcd("Perfil 1 Logado!");
+			} else if (!flag->ativaPerfil1){
+				escreve_lcd("Perfil 1 Bloq.!");
+				perfil = 0;
+			}
 			HAL_Delay(2000);
 
 		}
 		if (perfil == 2){
 			limpa_lcd();
-			escreve_lcd("Perfil 2 Logado!");
+			if (flag->ativaPerfil2){
+				escreve_lcd("Perfil 2 Logado!");
+			} else if (!flag->ativaPerfil2){
+				escreve_lcd("Perfil 2 Bloq.!");
+				perfil = 0;
+			}
 			HAL_Delay(2000);
 
 		}
@@ -72,13 +88,9 @@ void login (flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_Dat
 			HAL_Delay(2000);
 
 		}
-		if (perfil == 0){
-			limpa_lcd();
-			escreve_lcd("Senha Invalida!");
-			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
-		}
 
-		homicros(&perfil, flag, hrtc, sTime, DateToUpdate, segundo_ant, hadc1); // loop principal
+
+		homicros(&perfil, flag, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, htim3, hadc2); // loop principal
 
 		if (perfil == 'd'){				//comando de desligar o sistema
 			desligaSistema(flag);
@@ -89,9 +101,8 @@ void login (flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_Dat
 }
 
 
-int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, ADC_HandleTypeDef *hadc1){
-
-
+int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, ADC_HandleTypeDef *hadc1,
+		TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
 
   DateToUpdate->Date= 22;
   DateToUpdate->Month = 10;
@@ -107,8 +118,10 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
   unsigned char verificacao, segundo_ant = 0;
   flag flag;
   flag.sistema = 0;
-
-  inicia();
+  flag.ativaPerfil1 = 1;
+  flag.ativaPerfil2 = 1;
+  flag.atualizarTela = 1;
+  inicia(htim3, hadc1);
 
 
   while (1) {
@@ -120,7 +133,7 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
   	}
   	if (verificacao == '#' && flag.sistema == 0){
   		ligaSistema(&flag);
-  		login(&flag, hrtc, sTime, DateToUpdate, &segundo_ant, hadc1);
+  		login(&flag, hrtc, sTime, DateToUpdate, &segundo_ant, hadc1, htim3, hadc2);
   	}
   }
 }
