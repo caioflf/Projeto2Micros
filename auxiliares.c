@@ -116,7 +116,7 @@ void imprimeZero(unsigned short valor){
 
 void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
 				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
-	short valorLidoTemperatura, temperaturaCelsius;
+	int valorLidoTemperatura, temperaturaCelsius;
 	float aux;
 
 	//adquirindo tempo e data
@@ -130,8 +130,10 @@ void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDe
 	// adquirindo temperatura
 	HAL_ADC_PollForConversion(hadc1,1000);
 	valorLidoTemperatura = HAL_ADC_GetValue(hadc1);
-	aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
-	temperaturaCelsius = aux;
+	/*aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;*/
+	aux = ((((float)valorLidoTemperatura * 3.3 / 4096) - 0.76)/0.0025 + 25)/10;
+	temperaturaCelsius = (int)aux;
 
 	limpa_lcd();
 	escreve_lcd(" ");
@@ -208,7 +210,7 @@ char ler_senha(){
 		return perfil;
 	}
 	if (!compara_string(senha, SENHAADM)){
-		perfil = 3;
+		perfil = ADM;
 		return perfil;
 	}
 	else {
@@ -217,3 +219,155 @@ char ler_senha(){
 	}
 	return perfil;
 }
+
+// Menu interativo para o usuario
+void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
+
+	if (letra == '2'){			// ir para "cima"
+		if (!(indice->menu))			// nao faz nada
+		return;
+
+		if (indice->menu == 1){			// ja estava mostrando o cliente no topo, agora mostra a direção a ser seguida
+			indice->menu -= 1;
+			indice->info = 0;
+			return;
+		}
+
+		indice->menu -= 1;
+		indice->info = 0;
+		return;
+	}
+
+	if (letra == '5'){			// ir para "baixo"
+		if ((indice->menu == INDICE_MAX_USUARIO) && (perfil != ADM))
+		return;
+
+		if (indice->menu == INDICE_MAX_ADM)
+		return;
+
+		indice->menu += 1;
+		indice->info = 0;
+		return;
+	}
+
+	if (letra == '4'){			// ir para "esquerda"
+		if (!(indice->info))
+		return;
+
+		indice->info-=1;
+		return;
+	}
+
+	if (letra == '6'){		// ir para "direita"
+		if (indice->menu == 3){
+			 if(indice->info == 1)
+				 return;
+
+			 indice->info += 1;
+			return;
+		}
+
+		if (indice->menu == 4){
+				if(perfil != ADM)
+				return;
+
+				if(indice->info == 2)
+				return;
+
+				indice->info += 1;
+				return;
+		}
+
+		if ((indice->menu == 5)||(indice->menu == 6)){
+				if(indice->info == 1)
+				return;
+
+				indice->info += 1;
+				return;
+		}
+		return;
+	}
+
+	return;
+}
+
+void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra){
+	if (flag->atualizarTela)
+		flag->atualizarTela = 0;
+	else if ((indice->menu == indice->ultimoMenu || indice->info == indice->ultimoInfo) && letra == '\0')
+		return;
+
+
+	switch (indice->menu){
+		case 0: telaRepouso(hrtc, sTime, DateToUpdate, segundo_ant, hadc1);
+				break;
+
+		case 1: limpa_lcd();  					// luz 1
+				escreve_lcd("Luz1: ");
+				if (flag->luz1){				// avisa o status da luz
+					escreve_lcd("ON");
+					comando_lcd(0xC0);
+					escreve_lcd("Desligar: (1)");
+					if (letra == '1'){			// desliga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 0);
+						flag->luz1 = 0;
+						flag->atualizarTela = 1;
+					}
+				} else
+				if (!flag->luz1){				// avisa o status da luz
+					escreve_lcd("OFF");
+					comando_lcd(0xC0);
+					escreve_lcd("Ligar: (3)");
+					if (letra == '3'){			// liga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 1);
+						flag->luz1 = 1;
+						flag->atualizarTela = 1;
+					}
+				}
+				break;
+
+		case 2: limpa_lcd(); 					 // luz 2
+				escreve_lcd("Luz2: ");
+				if (flag->luz2){				// avisa o status da luz
+					escreve_lcd("ON");
+					comando_lcd(0xC0);
+					escreve_lcd("Desligar: (1)");
+					if (letra == '1'){			// desliga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 0);
+						flag->luz2 = 0;
+						flag->atualizarTela = 1;
+					}
+				} else
+				if (!flag->luz2){				// avisa o status da luz
+						escreve_lcd("OFF");
+						comando_lcd(0xC0);
+						escreve_lcd("Ligar: (3)");
+						if (letra == '3'){		// liga
+							HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 1);
+							flag->luz2 = 1;
+							flag->atualizarTela = 1;
+						}
+				}
+				break;
+
+		case 3: //luz quarto PWM
+				break;
+
+		case 4: // cortina
+				break;
+
+		case 5: // desabilita usuario
+				break;
+
+		case 6: // muda data ou hora
+				break;
+
+		default: break;
+	}
+
+}
+
+
+
+

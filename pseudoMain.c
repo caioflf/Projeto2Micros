@@ -5,9 +5,16 @@
 #include "teclado.h"
 #include "auxiliares.h"
 
+
 //loop principal
-void homicros(char *perfil, flag *flag){
+void homicros(char *perfil, flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
 	char letra, verificacao, i = 1;
+	indice indice;
+	indice.menu = 0;
+	indice.info = 0;
+	indice.ultimoMenu = 1;
+	indice.ultimoInfo = 1;
 	if (*perfil == 0 || *perfil == 'd'){
 		return;
 	}
@@ -27,8 +34,11 @@ void homicros(char *perfil, flag *flag){
 			return;
 		}
 
+		navegacaoMenu(flag, &indice, letra, *perfil);
+		menu(flag, &indice, hrtc, sTime, DateToUpdate, segundo_ant, hadc1, letra);
 
-
+		indice.ultimoMenu = indice.menu;
+		indice.ultimoInfo = indice.info;
 
 		i++;
 		if (i > 4) 	i = 1;
@@ -36,8 +46,11 @@ void homicros(char *perfil, flag *flag){
 
 }
 
-void login (flag *flag){
+void login (flag *flag, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+			unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
 	char perfil = 0;
+	lcdSolicitaSenha();
+	HAL_Delay(1000);
 	while(1){
 		perfil = ler_senha();
 
@@ -53,7 +66,7 @@ void login (flag *flag){
 			HAL_Delay(2000);
 
 		}
-		if (perfil == 3){
+		if (perfil == ADM){
 			limpa_lcd();
 			escreve_lcd("Perfil ADM Logado!");
 			HAL_Delay(2000);
@@ -65,7 +78,7 @@ void login (flag *flag){
 			HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
 		}
 
-		homicros(&perfil, flag); // loop principal
+		homicros(&perfil, flag, hrtc, sTime, DateToUpdate, segundo_ant, hadc1); // loop principal
 
 		if (perfil == 'd'){				//comando de desligar o sistema
 			desligaSistema(flag);
@@ -89,8 +102,6 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
   sTime->Minutes = 15;
   HAL_RTC_SetTime(hrtc, sTime, RTC_FORMAT_BIN);
 
-  uint16_t valorLidoTemp;
-  short tCelsius;
   HAL_ADC_Start(hadc1);
 
   unsigned char verificacao, segundo_ant = 0;
@@ -109,7 +120,7 @@ int pseudoMain(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
   	}
   	if (verificacao == '#' && flag.sistema == 0){
   		ligaSistema(&flag);
-  		login(&flag);
+  		login(&flag, hrtc, sTime, DateToUpdate, &segundo_ant, hadc1);
   	}
   }
 }
