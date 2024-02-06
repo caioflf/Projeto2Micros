@@ -132,3 +132,105 @@ unsigned char scan(unsigned char linha){
 	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
 	return '\0';
 }
+
+unsigned char debounceDimming(unsigned char num_bit){
+    unsigned char cont=0;
+    unsigned char ultimo=0;
+
+    while(cont<4){
+        HAL_Delay(1);
+        if(ultimo==(HAL_GPIO_ReadPin(GPIOB, 1<<(num_bit)))){
+            cont++;
+        }
+        else{
+            ultimo=(HAL_GPIO_ReadPin(GPIOB, 1<<(num_bit)));
+            cont=0;
+        }
+
+    }
+    return ultimo;
+}
+
+unsigned char scanDimming(unsigned char linha){
+
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 0);
+
+	if(!debounceDimming(7)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][0];
+	}
+	if(!debounceDimming(8)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][1];
+	}
+	if(!debounceDimming(9)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][2];
+	}
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+	return '\0';
+}
+
+unsigned char scanTemp(unsigned char linha){
+
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 0);
+
+	if(!debounceDimming(7)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][0];
+	}
+	if(!debounceDimming(8)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][1];
+	}
+	if(!debounceDimming(9)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][2];
+	}
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+	return '\0';
+}
+
+unsigned char scanData(unsigned char linha){
+
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 0);
+
+	if(!debounceDimming(7)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][0];
+	}
+	if(!debounceDimming(8)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][1];
+	}
+	if(!debounceDimming(9)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][2];
+	}
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+	return '\0';
+}
+
+unsigned char scanHora(unsigned char linha){
+
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 0);
+
+	if(!debounceDimming(7)){
+		while(!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7));
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][0];
+	}
+	if(!debounceDimming(8)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][1];
+	}
+	if(!debounceDimming(9)){
+		HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+		return teclado[linha-1][2];
+	}
+	HAL_GPIO_WritePin(GPIOB, 1<<(linha+2), 1);
+	return '\0';
+}
+

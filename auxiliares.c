@@ -23,6 +23,153 @@ extern RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef sTime;
 extern RTC_DateTypeDef DateToUpdate;
 
+void mudarData(RTC_DateTypeDef *DateToUpdate){
+	char letra = 0, i = 0, parteAlta = 0, parteBaixa = 0;
+	limpa_lcd();
+	escreve_lcd("Deseja Mudar a");
+	comando_lcd(0xC0);
+	escreve_lcd("data?   sim(3)");
+
+	while(1){
+		for (i = 1; i<=2; i++){
+			letra = scanData(i);
+
+			if(letra == '3'){
+				limpa_lcd();
+				escreve_lcd("Digite o dia: ");
+				while(1){
+					for(i = 1; i<=4; i++){
+						letra = scan(i);
+						if ((letra != '*')&&(letra != '#')&&(letra != '\0')){
+							letra_lcd(letra);
+							parteAlta = letra-48;
+
+							while(1){
+								for(i = 1; i<=4; i++){
+									letra = scan(i);
+									if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+										letra_lcd(letra);
+										parteBaixa = letra-48;
+										DateToUpdate->Date = 10*parteAlta + parteBaixa;
+										HAL_Delay(500);
+
+										limpa_lcd();
+										escreve_lcd("Digite o mes, ");
+										comando_lcd(0xC0);
+										escreve_lcd("Parte Alta: ");
+										while(1){
+											for(i = 1; i<=4; i++){
+												letra = scan(i);
+												if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+													letra_lcd(letra);
+													parteAlta = letra-48;
+													limpa_lcd();
+													escreve_lcd("Digite o mes, ");
+													comando_lcd(0xC0);
+													escreve_lcd("Parte Baixa: ");
+
+													while(1){
+														for(i = 1; i<=4; i++){
+															letra = scan(i);
+															if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+																letra_lcd(letra);
+																parteBaixa = letra-48;
+																DateToUpdate->Month = 10*parteAlta + parteBaixa;
+																HAL_Delay(500);
+																return;
+															}
+														}
+													}
+
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if((letra == '2') || (letra == '4') || (letra == '5'))
+				return;
+		}
+	}
+
+}
+
+
+void mudarHora(RTC_TimeTypeDef *sTime){
+	char letra = 0, i = 0, parteAlta = 0, parteBaixa = 0;
+	limpa_lcd();
+	escreve_lcd("Deseja Mudar a");
+	comando_lcd(0xC0);
+	escreve_lcd("hora?   sim(3)");
+
+	while(1){
+		for (i = 1; i<=2; i++){
+			letra = scanHora(i);
+
+			if(letra == '3'){
+				limpa_lcd();
+				escreve_lcd("Digite a hora: ");
+				while(1){
+					for(i = 1; i<=4; i++){
+						letra = scan(i);
+						if ((letra != '*')&&(letra != '#')&&(letra != '\0')){
+							letra_lcd(letra);
+							parteAlta = letra-48;
+
+							while(1){
+								for(i = 1; i<=4; i++){
+									letra = scan(i);
+									if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+										letra_lcd(letra);
+										parteBaixa = letra-48;
+										sTime->Hours = 10*parteAlta + parteBaixa;
+										HAL_Delay(500);
+
+										limpa_lcd();
+										escreve_lcd("Digite minutos");
+										comando_lcd(0xC0);
+										while(1){
+											for(i = 1; i<=4; i++){
+												letra = scan(i);
+												if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+													letra_lcd(letra);
+													parteAlta = letra-48;
+
+													while(1){
+														for(i = 1; i<=4; i++){
+															letra = scan(i);
+															if((letra != '*')&&(letra != '#')&&(letra != '\0')){
+																letra_lcd(letra);
+																parteBaixa = letra-48;
+																sTime->Hours = 10*parteAlta + parteBaixa;
+																HAL_Delay(500);
+																return;
+															}
+														}
+													}
+
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if((letra == '6') || (letra == '4') || (letra == '5'))
+				return;
+		}
+	}
+
+}
 void converteASCII (unsigned short valor, char *stringConvertida){
 	char i = 0, b = 0;
 	if (valor > 65534){
@@ -116,7 +263,7 @@ void imprimeZero(unsigned short valor){
 
 void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
 				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1){
-	short valorLidoTemperatura, temperaturaCelsius;
+	int valorLidoTemperatura, temperaturaCelsius;
 	float aux;
 
 	//adquirindo tempo e data
@@ -130,8 +277,10 @@ void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDe
 	// adquirindo temperatura
 	HAL_ADC_PollForConversion(hadc1,1000);
 	valorLidoTemperatura = HAL_ADC_GetValue(hadc1);
-	aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
-	temperaturaCelsius = aux;
+	/*aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;*/
+	aux = ((((float)valorLidoTemperatura * 3.3 / 4096) - 0.76)/0.0025 + 25)/10;
+	temperaturaCelsius = (int)aux;
 
 	limpa_lcd();
 	escreve_lcd(" ");
@@ -163,8 +312,14 @@ void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDe
 
 }
 
-void inicia(){
+void inicia(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
 	inicia_lcd_4bits();
+
+	//liga pwm
+	HAL_TIM_PWM_Start(htim3, TIM_CHANNEL_3);
+
+	//calibra leitura do potenciometro
+	HAL_ADCEx_Calibration_Start(hadc2);
 
 	  //setando as linhas do teclado como 1
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
@@ -218,10 +373,86 @@ char ler_senha(){
 	return perfil;
 }
 
+unsigned short configura_dimmer(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
+	short valor_ad, porcentagem = 0;
+	char letra = 0, i = 0;
+
+	while (1){
+		HAL_ADC_Start(hadc2);
+		HAL_ADC_PollForConversion(hadc2, 1);
+		valor_ad = HAL_ADC_GetValue(hadc2);
+		limpa_lcd();
+		escreve_lcd("Configurando Luz");
+		comando_lcd(0xC0);
+		TIM3->CCR3 = (valor_ad<<4);
+		porcentagem = valor_ad/409;
+		for (i = 0; i<porcentagem; i++){
+			letra_lcd(0xFF);
+		}
+		porcentagem = 10 - porcentagem;
+
+		for(i = 0; i<(porcentagem+2); i++){
+			letra_lcd(' ');
+		}
+
+		porcentagem = valor_ad*7/285;
+
+		if(porcentagem != 100)
+			letra_lcd(' ');
+
+		imprimeASCII(porcentagem);
+		letra_lcd('%');
+
+		for(i = 1; i<=2; i++){
+			letra = scanDimming(i);
+			if((letra == '2') || (letra == '4') || (letra == '5') || (letra == '6'))
+				return valor_ad;
+		}
+
+
+	}
+	//escreve_lcd("Salvar (3)");
+	//while(letra != '3'){
+	//	letra = scan (1);
+	//	HAL_ADC_Start(hadc2);
+	//	HAL_ADC_PollForConversion(hadc2, 1);
+	//	valor_ad = HAL_ADC_GetValue(hadc2);
+	//	TIM3->CCR3 = (valor_ad<<4);
+	//	HAL_Delay(1);
+	//}
+}
+
+char configuraTemperatura(char temperaturaAtual){
+	char i = 0, letra = 0;
+	while (1){
+		limpa_lcd();
+		escreve_lcd("Config. Temp.");
+		comando_lcd(0x0C);
+		letra_lcd(0x2C);
+		letra_lcd(0x38);
+		escreve_lcd("     ");
+		imprimeASCII(temperaturaAtual);
+		letra_lcd(223);
+		escreve_lcd("C");
+
+		for(i = 1; i<=2; i++){
+			letra = scanTemp(i);
+			if(letra == '2')
+			temperaturaAtual++;
+
+			if(letra == '5')
+			temperaturaAtual--;
+
+			if(letra == '4')
+			return temperaturaAtual;
+		}
+	}
+}
+
 // Menu interativo para o usuario
 void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 
-	if (letra == '8'){			// ir para "cima"
+	if (letra == '2'){			// ir para "cima"
 		if (!(indice->menu))			// nao faz nada
 		return;
 
@@ -236,7 +467,7 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 		return;
 	}
 
-	if (letra == '0'){			// ir para "baixo"
+	if (letra == '5'){			// ir para "baixo"
 		if ((indice->menu == INDICE_MAX_USUARIO) && (perfil != ADM))
 		return;
 
@@ -248,7 +479,7 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 		return;
 	}
 
-	if (letra == '7'){			// ir para "esquerda"
+	if (letra == '4'){			// ir para "esquerda"
 		if (!(indice->info))
 		return;
 
@@ -256,7 +487,7 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 		return;
 	}
 
-	if (letra == '9'){		// ir para "direita"
+	if (letra == '6'){		// ir para "direita"
 		if (indice->menu == 3){
 			 if(indice->info == 1)
 				 return;
@@ -289,11 +520,226 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 	return;
 }
 
-void menu(flag *flag, indice *indice){
-	limpa_lcd();
-	imprimeASCII(indice->menu);
-	comando_lcd(0xC0);
-	imprimeASCII(indice->info);
+void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2, char perfil){
+	if (flag->atualizarTela)
+		flag->atualizarTela = 0;
+
+	if(indice->menu == 0){
+		 telaRepouso(hrtc, sTime, DateToUpdate, segundo_ant, hadc1);
+		 return;
+	}
+
+	else if ((indice->menu == indice->ultimoMenu || indice->info == indice->ultimoInfo) && letra == '\0')
+		return;
+
+
+	switch (indice->menu){
+
+		case 1: limpa_lcd();  					// luz 1
+				escreve_lcd("Luz Cozinha: ");
+				if (flag->luz1){				// avisa o status da luz
+					escreve_lcd("ON");
+					comando_lcd(0xC0);
+					escreve_lcd("Desligar: (1)");
+					if (letra == '1'){			// desliga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 0);
+						flag->luz1 = 0;
+						flag->atualizarTela = 1;
+					}
+				} else
+				if (!flag->luz1){				// avisa o status da luz
+					escreve_lcd("OFF");
+					comando_lcd(0xC0);
+					escreve_lcd("Ligar: (3)");
+					if (letra == '3'){			// liga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 1);
+						flag->luz1 = 1;
+						flag->atualizarTela = 1;
+					}
+				}
+				break;
+
+		case 2: limpa_lcd(); 					 // luz 2
+				escreve_lcd("Luz Sala: ");
+				if (flag->luz2){				// avisa o status da luz
+					escreve_lcd("ON");
+					comando_lcd(0xC0);
+					escreve_lcd("Desligar: (1)");
+					if (letra == '1'){			// desliga
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 0);
+						flag->luz2 = 0;
+						flag->atualizarTela = 1;
+					}
+				} else
+				if (!flag->luz2){				// avisa o status da luz
+						escreve_lcd("OFF");
+						comando_lcd(0xC0);
+						escreve_lcd("Ligar: (3)");
+						if (letra == '3'){		// liga
+							HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 1);
+							flag->luz2 = 1;
+							flag->atualizarTela = 1;
+						}
+				}
+				break;
+
+		case 3: limpa_lcd();
+				if (indice->info == 0){
+					escreve_lcd("Luz Quarto: ");
+					if (!flag->luz3){
+						escreve_lcd("OFF");
+						comando_lcd(0xC0);
+						escreve_lcd("Ligar: (3)");
+						if (letra == '3'){			// desliga
+							if (perfil == 1){
+								TIM3->CCR3 = (flag->valor_ad1<<4);
+							} else if (perfil == 2){
+								TIM3->CCR3 = (flag->valor_ad2<<4);
+							} else if (perfil == 3){
+								TIM3->CCR3 = (flag->valor_ad3<<4);
+							}
+							flag->luz3 = 1;
+							flag->atualizarTela = 1;
+						}
+					} else if (flag->luz3){
+						escreve_lcd("ON");
+						comando_lcd(0xC0);
+						escreve_lcd("Desligar: (1)");
+						if (letra == '1'){			// desliga
+							TIM3->CCR3 = (0<<4);
+							flag->luz3 = 0;
+							flag->atualizarTela = 1;
+						}
+					}
+				} else if (indice->info == 1){
+							if (perfil == 1){
+								flag->valor_ad1 = configura_dimmer(htim3, hadc2);
+							} else if (perfil == 2){
+								flag->valor_ad2 = configura_dimmer(htim3, hadc2);
+							} else if (perfil == 3){
+								flag->valor_ad3 = configura_dimmer(htim3, hadc2);
+							}
+							flag->luz3 = 1;
+							flag->atualizarTela = 1;
+						}
+				break;
+
+		case 4: limpa_lcd();
+
+				switch (indice->info){
+
+					case 1: escreve_lcd("Cortina: ");
+
+							if (flag->cortina){				// avisa o status da luz
+								escreve_lcd("ON");
+								comando_lcd(0xC0);
+								escreve_lcd("Desligar: (1)");
+
+								if (letra == '1'){			// desliga
+									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+									flag->cortina = 0;
+									flag->atualizarTela = 1;
+								}
+							}
+
+							else {
+								escreve_lcd("OFF");			// avisa o status da luz
+								comando_lcd(0xC0);
+								escreve_lcd("Ligar: (3)");
+								if (letra == '3'){		// liga
+									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+									flag->cortina = 1;
+									flag->atualizarTela = 1;
+								}
+							}
+							break;
+
+					case 2: escreve_lcd("Automático: ");
+
+							if (flag->cortinaAuto){
+								escreve_lcd("ON");
+								comando_lcd(0xC0);
+								escreve_lcd("Desligar: (1)");
+								if (letra == '1'){
+									flag->cortinaAuto = 0;
+									flag->atualizarTela = 1;
+								}
+							}
+							else{
+								escreve_lcd("OFF");
+								comando_lcd(0xC0);
+								escreve_lcd("Ligar: (3)");
+								if (letra == '3'){
+									flag->cortinaAuto = 1;
+									flag->atualizarTela = 1;
+								}
+							}
+							break;
+
+					case 3:	if (perfil == 1)
+							flag->valorTemperatura1 = configuraTemperatura(flag->valorTemperatura1);
+
+							if (perfil == 2)
+							flag->valorTemperatura2 = configuraTemperatura(flag->valorTemperatura2);
+
+							if (perfil == 3)
+							flag->valorTemperatura3 = configuraTemperatura(flag->valorTemperatura3);
+
+							flag->atualizarTela = 1;
+							break;
+							}
+				break;
+
+		case 5: limpa_lcd();
+				if (indice->info == 0){
+					escreve_lcd("Perfil 1:");
+					comando_lcd(0xC0);
+					if (flag->ativaPerfil1){
+						escreve_lcd("Bloquear (3)");
+						if (letra == '3'){
+							flag->ativaPerfil1 = 0;
+							flag->atualizarTela = 1;
+						}
+					}else if (!flag->ativaPerfil1){
+						escreve_lcd("Desbloquear (1)");
+						if (letra == '1'){
+							flag->ativaPerfil1 = 1;
+							flag->atualizarTela = 1;
+						}
+					}
+				} else if (indice->info == 1){
+					escreve_lcd("Perfil 2:");
+					comando_lcd(0xC0);
+					if (flag->ativaPerfil2){
+						escreve_lcd("Bloquear (3)");
+						if (letra == '3'){
+							flag->ativaPerfil2 = 0;
+							flag->atualizarTela = 1;
+						}
+					}else if (!flag->ativaPerfil2){
+						escreve_lcd("Desbloquear (1)");
+						if (letra == '1'){
+							flag->ativaPerfil2 = 1;
+							flag->atualizarTela = 1;
+						}
+					}
+				}
+				break;
+
+		case 6: if(indice->info == 0)
+				mudarHora(sTime);
+
+				if(indice->info == 1)
+				mudarData(DateToUpdate);
+
+				flag->atualizarTela = 1;
+
+				break;
+
+		default: break;
+	}
+
 }
 
 
