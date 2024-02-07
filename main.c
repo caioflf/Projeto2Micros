@@ -1,110 +1,222 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+
 #include "main.h"
+#include "variaveisPseudoMain.h"
+#include "controleLCD.h"
+#include "teclado.h"
+#include "auxiliares.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
-
 RTC_HandleTypeDef hrtc;
-
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
-/* USER CODE BEGIN PV */
 
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_RTC_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_ADC2_Init(void);
-/* USER CODE BEGIN PFP */
+static void MX_TIM2_Init(void);
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+void cortinaAutomatica(flag *flag, char perfil){
 
-/* USER CODE END 0 */
+	if(!(flag->cortinaAuto))
+	return;
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+	int valorLidoTemperatura, temperaturaCelsius;
+	float aux;
 
-  /* USER CODE END 1 */
+	HAL_ADC_PollForConversion(&hadc1,1000);
+	valorLidoTemperatura = HAL_ADC_GetValue(&hadc1);
+	/*aux = 332.558 - 0.187364 * valorLidoTemperatura; // (V25 - 3.3)/4096 * AVG_SLOPE
+	temperaturaCelsius = aux;*/
+	aux = ((((float)valorLidoTemperatura * 3.3 / 4096) - 0.76)/0.0025 + 25)/10;
+	temperaturaCelsius = (int)aux;
 
-  /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	if(perfil == 1){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura1+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura1-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+			return;
+		}
+		return;
+	}
+	if(perfil == 2){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura2+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura2-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+			return;
+		}
+		return;
+	}
+	if(perfil == 3){
+		if(flag->cortina){
+			if(temperaturaCelsius >= (flag->valorTemperatura3+1)){
+				flag->cortina = 0;
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+				return;
+			}
+			return;
+		}
+		if(temperaturaCelsius <= (flag->valorTemperatura3-1)){
+			flag->cortina = 1;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+			return;
+		}
+		return;
+	}
+}
 
-  /* USER CODE BEGIN Init */
+void simulaPresencaNoturna(flag *flag){
+	if (!(flag->presencaNoturna))
+		return;
 
-  /* USER CODE END Init */
+	HAL_TIM_Base_Start_IT(&htim2);
 
-  /* Configure the system clock */
+	char letra = 0, perfil = 0, status = 0;
+
+	while(!perfil){
+		while(status != '*'){
+
+		}
+
+
+	}
+}
+
+//loop principal
+void homicros(char *perfil, flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
+	char letra, verificacao, i = 1;
+	indice indice;
+	indice.menu = 0;
+	indice.info = 0;
+	indice.ultimoMenu = 0;
+	indice.ultimoInfo = 0;
+	if (*perfil == 0 || *perfil == 'd'){
+		return;
+	}
+	while(1){
+
+
+		for (i = 1; i <= 2; i++){
+			letra = scan(i);
+			navegacaoMenu(flag, &indice, letra, *perfil);
+			menu(flag, &indice, &hrtc, &sTime, DateToUpdate, segundo_ant, &hadc1, letra, &htim3, &hadc2, *perfil);
+
+			indice.ultimoMenu = indice.menu;
+			indice.ultimoInfo = indice.info;
+		}
+
+		cortinaAutomatica(flag, *perfil);
+	//	simulaPresecaNoturna(&flag);
+
+		for (i = 3; i <= 4; i++){
+			letra = scan(i);
+			verificacao = verifica_logoff();
+			if (verificacao == '#'){
+				limpa_lcd();
+				escreve_lcd("Logoff Realizado");
+				HAL_Delay(2000);
+				*perfil = 0;
+				flag->atualizarTela = 1;
+				return;
+			}
+			if (verificacao == '*'){
+				desligaSistema(flag);
+				*perfil = 'd';
+				return;
+			}
+		}
+	}
+
+}
+
+void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
+	char perfil = 0;
+	lcdSolicitaSenha();
+	HAL_Delay(1000);
+	while(1){
+		perfil = ler_senha();
+
+		if (perfil == 0){
+					limpa_lcd();
+					escreve_lcd("Senha Invalida!");
+					HAL_Delay(2000);				// atraso em que o usuario espera pra poder digitar novamente a senha
+		}
+		if (perfil == 1){
+			limpa_lcd();
+			if (flag->ativaPerfil1){
+				escreve_lcd("Perfil 1 Logado!");
+			} else if (!flag->ativaPerfil1){
+				escreve_lcd("Perfil 1 Bloq.!");
+				perfil = 0;
+			}
+			HAL_Delay(2000);
+
+		}
+		if (perfil == 2){
+			limpa_lcd();
+			if (flag->ativaPerfil2){
+				escreve_lcd("Perfil 2 Logado!");
+			} else if (!flag->ativaPerfil2){
+				escreve_lcd("Perfil 2 Bloq.!");
+				perfil = 0;
+			}
+			HAL_Delay(2000);
+
+		}
+		if (perfil == ADM){
+			limpa_lcd();
+			escreve_lcd("Perfil ADM Logado!");
+			HAL_Delay(2000);
+
+		}
+
+
+		homicros(&perfil, flag, sTime, DateToUpdate, segundo_ant); // loop principal
+
+		if (perfil == 'd'){				//comando de desligar o sistema
+			desligaSistema(flag);
+			return;
+		}
+
+	}
+}
+
+
+int main(){
+
+ HAL_Init();
+
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_RTC_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
   MX_ADC2_Init();
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+  MX_TIM2_Init();
 
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef DateToUpdate;
@@ -116,20 +228,63 @@ int main(void)
 
   GPIOC->BSRR  = GPIO_BSRR_BR13;
 
-  while (1)
-  {
+  DateToUpdate.Date= 22;
+  DateToUpdate.Month = 10;
+  DateToUpdate.Year = 24;
 
-	  pseudoMain(&hrtc, &sTime, &DateToUpdate, &hadc1, &htim3, &hadc2);
+  HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN);
 
-    /* USER CODE END WHILE */
+  sTime.Hours = 9;
+  sTime.Minutes = 15;
 
-    /* USER CODE BEGIN 3 */
+  HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+
+  HAL_ADC_Start(&hadc1);
+
+  unsigned char verificacao, segundo_ant = 0;
+
+  flag flag;
+  flag.sistema = 0;
+  flag.ativaPerfil1 = 1;
+  flag.ativaPerfil2 = 1;
+  flag.atualizarTela = 1;
+  flag.luz1 = 0;
+  flag.luz2 = 0;
+  flag.luz3 = 0;
+  flag.cortina = 0;
+  flag.cortinaAuto = 0;
+  flag.valorTemperatura1 = 25;
+  flag.valorTemperatura2 = 25;
+  flag.valorTemperatura3 = 25;
+  flag.valor_ad1 = 0;
+  flag.valor_ad2 = 0;
+  flag.valor_ad3 = 0;
+  flag.presencaNoturna = 0;
+  flag.contagemLuzesPresenca = 0;
+
+  inicia(&htim3, &hadc2);
+
+
+  while (1) {
+
+	telaRepouso(&hrtc, &sTime, &DateToUpdate, &segundo_ant, &hadc1);
+  	verificacao = verifica_logoff();
+  	if (verificacao == '*'){
+  		desligaSistema(&flag);
+  	}
+  	if (verificacao == '#' && flag.sistema == 0){
+  		ligaSistema(&flag);
+  		login(&flag, &sTime, &DateToUpdate, &segundo_ant);
+  	}
   }
-
-
-  /* USER CODE END 3 */
 }
 
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	HAL_TIM_Base_Start_IT(&htim2);
+
+}
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -326,6 +481,51 @@ static void MX_RTC_Init(void)
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 57600;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 6250-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
 
 }
 

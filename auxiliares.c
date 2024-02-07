@@ -11,7 +11,6 @@
 
 #include "main.h"
 #include "variaveisPseudoMain.h"
-#include "pseudoMain.h"
 #include "controleLCD.h"
 #include "teclado.h"
 #include "auxiliares.h"
@@ -123,7 +122,7 @@ void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 				while(1){
 					for(i = 1; i<=4; i++){
 						letra = scan(i);
-						if ((letra != '*')&&(letra != '#')&&(letra != '\0')){
+						if ((letra == '0')||(letra == '1')||(letra == '2')){
 							letra_lcd(letra);
 							parteAlta = letra-48;
 
@@ -161,7 +160,6 @@ void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 															}
 														}
 													}
-
 												}
 											}
 										}
