@@ -38,6 +38,7 @@ void mudarData(RTC_DateTypeDef *DateToUpdate, indice *indice, RTC_HandleTypeDef 
 				limpa_lcd();
 				escreve_lcd("Digite o dia: ");
 				comando_lcd(0xC0);
+				HAL_Delay(1000);
 				while(1){
 					for(i = 1; i<=4; i++){
 						letra = scan(i);
@@ -77,7 +78,6 @@ void mudarData(RTC_DateTypeDef *DateToUpdate, indice *indice, RTC_HandleTypeDef 
 																parteBaixa = letra-48;
 																DateToUpdate->Month = 10*parteAlta + parteBaixa;
 																HAL_RTC_SetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
-																HAL_Delay(500);
 																indice->menu = 0;
 																indice->info = 0;
 																return;
@@ -113,13 +113,13 @@ void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 
 	while(1){
 		for (i = 1; i<=2; i++){
-			letra = scanHora(i);
+			letra = scanData(i);
 
 			if(letra == '3'){
 				limpa_lcd();
 				escreve_lcd("Digite a hora: ");
 				comando_lcd(0xC0);
-				HAL_Delay(500);
+				HAL_Delay(1000);
 				while(1){
 					for(i = 1; i<=4; i++){
 						letra = scan(i);
@@ -152,7 +152,7 @@ void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 															if((letra != '*')&&(letra != '#')&&(letra != '\0')){
 																letra_lcd(letra);
 																parteBaixa = letra-48;
-																sTime->Hours = 10*parteAlta + parteBaixa;
+																sTime->Minutes = 10*parteAlta + parteBaixa;
 																HAL_RTC_SetTime(hrtc, sTime, RTC_FORMAT_BIN);
 																HAL_Delay(500);
 																indice->menu = 0;
@@ -173,7 +173,7 @@ void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 				}
 			}
 
-			if((letra == '6') || (letra == '4') || (letra == '5'))
+			if((letra == '6') || (letra == '4') || (letra == '5')||(letra == '2'))
 				return;
 		}
 	}
@@ -677,15 +677,15 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 							}
 							break;
 
-					case 2:	if (perfil == 1)
+					case 2:	if (perfil == 1){
 							flag->valorTemperatura1 = configuraTemperatura(flag->valorTemperatura1);
-
-							if (perfil == 2)
+							}
+							if (perfil == 2){
 							flag->valorTemperatura2 = configuraTemperatura(flag->valorTemperatura2);
-
-							if (perfil == 3)
+							}
+							if (perfil == 3){
 							flag->valorTemperatura3 = configuraTemperatura(flag->valorTemperatura3);
-
+							}
 							flag->atualizarTela = 1;
 							break;
 							}
@@ -727,15 +727,17 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 				}
 				break;
 
-		case 6: if(indice->info == 0)
+		case 6: if(!(indice->info)){
 				mudarHora(sTime, indice, hrtc);
-
-				if(indice->info == 1)
+				}
+				if(indice->info){
 				mudarData(DateToUpdate, indice, hrtc);
-
+				}
 				flag->atualizarTela = 1;
 
 				break;
+
+		case 7:
 
 		default: break;
 	}
