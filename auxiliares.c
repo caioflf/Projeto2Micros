@@ -16,6 +16,7 @@
 #include "auxiliares.h"
 
 
+
 /*====================================  Funçoes Auxiliares =======================================*/
 
 extern RTC_HandleTypeDef hrtc;
@@ -518,8 +519,9 @@ void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil){
 	return;
 }
 
-void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2, char perfil){
+void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant,
+		ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, TIM_HandleTypeDef *htim2, ADC_HandleTypeDef *hadc2, char perfil, char *contadorGlobal){
+
 	if (flag->atualizarTela)
 		flag->atualizarTela = 0;
 
@@ -735,7 +737,29 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 
 				break;
 
-		case 7:
+		case 7: escreve_lcd("Luz Cozinha: ");
+				if (flag->presencaNoturna){				// avisa o status da luz
+						escreve_lcd("ON");
+						comando_lcd(0xC0);
+						escreve_lcd("Desligar: (1)");
+						if (letra == '1'){			// desliga
+							*contadorGlobal = 0;
+							HAL_TIM_Base_Stop_IT(htim2);
+							flag->presencaNoturna = 0;
+							flag->ativadoNoturno = 0;
+							flag->atualizarTela = 1;
+						}
+				} else
+					if (!flag->presencaNoturna){				// avisa o status da luz
+						escreve_lcd("OFF");
+						comando_lcd(0xC0);
+						escreve_lcd("Ligar: (3)");
+						if (letra == '3'){			// liga
+							flag->presencaNoturna = 1;
+							flag->atualizarTela = 1;
+						}
+					}
+				break;
 
 		default: break;
 	}

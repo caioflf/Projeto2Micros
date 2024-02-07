@@ -39,8 +39,8 @@ char configuraTemperatura(char temperaturaAtual);
 
 void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil);
 
-void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
-		unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2, char perfil);
+void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant,
+		ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, TIM_HandleTypeDef *htim2, ADC_HandleTypeDef *hadc2, char perfil, char *contadorGlobal);
 
 #endif
 

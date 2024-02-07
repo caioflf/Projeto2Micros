@@ -1,4 +1,3 @@
-
 #include "main.h"
 #include "variaveisPseudoMain.h"
 #include "controleLCD.h"
@@ -21,10 +20,13 @@ static void MX_TIM3_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_TIM2_Init(void);
 
+char contadorGlobal;
 
-void cortinaAutomatica(flag *flag, char perfil){
+flag flagGlobal;
 
-	if(!(flag->cortinaAuto))
+void cortinaAutomatica(char perfil){
+
+	if(!(flagGlobal.cortinaAuto))
 	return;
 
 	int valorLidoTemperatura, temperaturaCelsius;
@@ -39,48 +41,48 @@ void cortinaAutomatica(flag *flag, char perfil){
 
 
 	if(perfil == 1){
-		if(flag->cortina){
-			if(temperaturaCelsius >= (flag->valorTemperatura1+1)){
-				flag->cortina = 0;
+		if(flagGlobal.cortina){
+			if(temperaturaCelsius >= (flagGlobal.valorTemperatura1+1)){
+				flagGlobal.cortina = 0;
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
-		if(temperaturaCelsius <= (flag->valorTemperatura1-1)){
-			flag->cortina = 1;
+		if(temperaturaCelsius <= (flagGlobal.valorTemperatura1-1)){
+			flagGlobal.cortina = 1;
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
 		return;
 	}
 	if(perfil == 2){
-		if(flag->cortina){
-			if(temperaturaCelsius >= (flag->valorTemperatura2+1)){
-				flag->cortina = 0;
+		if(flagGlobal.cortina){
+			if(temperaturaCelsius >= (flagGlobal.valorTemperatura2+1)){
+				flagGlobal.cortina = 0;
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
-		if(temperaturaCelsius <= (flag->valorTemperatura2-1)){
-			flag->cortina = 1;
+		if(temperaturaCelsius <= (flagGlobal.valorTemperatura2-1)){
+			flagGlobal.cortina = 1;
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
 		return;
 	}
 	if(perfil == 3){
-		if(flag->cortina){
-			if(temperaturaCelsius >= (flag->valorTemperatura3+1)){
-				flag->cortina = 0;
+		if(flagGlobal.cortina){
+			if(temperaturaCelsius >= (flagGlobal.valorTemperatura3+1)){
+				flagGlobal.cortina = 0;
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
-		if(temperaturaCelsius <= (flag->valorTemperatura3-1)){
-			flag->cortina = 1;
+		if(temperaturaCelsius <= (flagGlobal.valorTemperatura3-1)){
+			flagGlobal.cortina = 1;
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
@@ -88,25 +90,30 @@ void cortinaAutomatica(flag *flag, char perfil){
 	}
 }
 
-void simulaPresencaNoturna(flag *flag){
-	if (!(flag->presencaNoturna))
+void simulaPresencaNoturna(RTC_TimeTypeDef *sTime){
+	if (!(flagGlobal.presencaNoturna))
 		return;
 
-	HAL_TIM_Base_Start_IT(&htim2);
+	if((sTime->Hours >= 23) || (sTime->Hours < 2)){
+		if(flagGlobal.ativadoNoturno)
+		return;
 
-	char letra = 0, perfil = 0, status = 0;
-
-	while(!perfil){
-		while(status != '*'){
-
-		}
-
-
+		HAL_TIM_Base_Start_IT(&htim2);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 1);
+		flagGlobal.luz1 = 1;
+		flagGlobal.atualizarTela = 1;
+		contadorGlobal = 0;
+		flagGlobal.ativadoNoturno = 1;
+		return;
 	}
+
+	flagGlobal.ativadoNoturno = 0;
+	contadorGlobal = 0;
+	HAL_TIM_Base_Stop_IT(&htim2);
 }
 
 //loop principal
-void homicros(char *perfil, flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
+void homicros(char *perfil, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
 	char letra, verificacao, i = 1;
 	indice indice;
 	indice.menu = 0;
@@ -121,15 +128,15 @@ void homicros(char *perfil, flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
 
 		for (i = 1; i <= 2; i++){
 			letra = scan(i);
-			navegacaoMenu(flag, &indice, letra, *perfil);
-			menu(flag, &indice, &hrtc, &sTime, DateToUpdate, segundo_ant, &hadc1, letra, &htim3, &hadc2, *perfil);
+			navegacaoMenu(&flagGlobal, &indice, letra, *perfil);
+			menu(&flagGlobal, &indice, &hrtc, sTime, DateToUpdate, segundo_ant, &hadc1, letra, &htim3, &htim2, &hadc2, *perfil, &contadorGlobal);
 
 			indice.ultimoMenu = indice.menu;
 			indice.ultimoInfo = indice.info;
 		}
 
-		cortinaAutomatica(flag, *perfil);
-	//	simulaPresecaNoturna(&flag);
+		cortinaAutomatica(*perfil);
+		simulaPresencaNoturna(sTime);
 
 		for (i = 3; i <= 4; i++){
 			letra = scan(i);
@@ -139,11 +146,11 @@ void homicros(char *perfil, flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
 				escreve_lcd("Logoff Realizado");
 				HAL_Delay(2000);
 				*perfil = 0;
-				flag->atualizarTela = 1;
+				flagGlobal.atualizarTela = 1;
 				return;
 			}
 			if (verificacao == '*'){
-				desligaSistema(flag);
+				desligaSistema(&flagGlobal);
 				*perfil = 'd';
 				return;
 			}
@@ -152,11 +159,12 @@ void homicros(char *perfil, flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef 
 
 }
 
-void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
+void login (RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant){
 	char perfil = 0;
 	lcdSolicitaSenha();
 	HAL_Delay(1000);
 	while(1){
+
 		perfil = ler_senha();
 
 		if (perfil == 0){
@@ -166,9 +174,9 @@ void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, u
 		}
 		if (perfil == 1){
 			limpa_lcd();
-			if (flag->ativaPerfil1){
+			if (flagGlobal.ativaPerfil1){
 				escreve_lcd("Perfil 1 Logado!");
-			} else if (!flag->ativaPerfil1){
+			} else if (!flagGlobal.ativaPerfil1){
 				escreve_lcd("Perfil 1 Bloq.!");
 				perfil = 0;
 			}
@@ -177,9 +185,9 @@ void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, u
 		}
 		if (perfil == 2){
 			limpa_lcd();
-			if (flag->ativaPerfil2){
+			if (flagGlobal.ativaPerfil2){
 				escreve_lcd("Perfil 2 Logado!");
-			} else if (!flag->ativaPerfil2){
+			} else if (!flagGlobal.ativaPerfil2){
 				escreve_lcd("Perfil 2 Bloq.!");
 				perfil = 0;
 			}
@@ -194,10 +202,10 @@ void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, u
 		}
 
 
-		homicros(&perfil, flag, sTime, DateToUpdate, segundo_ant); // loop principal
+		homicros(&perfil, sTime, DateToUpdate, segundo_ant); // loop principal
 
 		if (perfil == 'd'){				//comando de desligar o sistema
-			desligaSistema(flag);
+			desligaSistema(&flagGlobal);
 			return;
 		}
 
@@ -205,85 +213,126 @@ void login (flag *flag, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, u
 }
 
 
-int main(){
+int main(void)
+{
 
- HAL_Init();
+   HAL_Init();
+   SystemClock_Config();
 
-  SystemClock_Config();
+   MX_GPIO_Init();
+   MX_RTC_Init();
+   MX_ADC1_Init();
+   MX_TIM3_Init();
+   MX_ADC2_Init();
+   MX_TIM2_Init();
 
-  MX_GPIO_Init();
-  MX_RTC_Init();
-  MX_ADC1_Init();
-  MX_TIM3_Init();
-  MX_ADC2_Init();
-  MX_TIM2_Init();
+   RTC_TimeTypeDef sTime;
+   RTC_DateTypeDef DateToUpdate;
 
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef DateToUpdate;
+   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-  RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+   GPIOC->CRH  &= ~GPIO_CRH_CNF13;
+   GPIOC->CRH  |=  GPIO_CRH_MODE13_0;
 
-  GPIOC->CRH  &= ~GPIO_CRH_CNF13;
-  GPIOC->CRH  |=  GPIO_CRH_MODE13_0;
+   GPIOC->BSRR  = GPIO_BSRR_BR13;
 
-  GPIOC->BSRR  = GPIO_BSRR_BR13;
+   DateToUpdate.Date= 22;
+   DateToUpdate.Month = 10;
+   DateToUpdate.Year = 24;
 
-  DateToUpdate.Date= 22;
-  DateToUpdate.Month = 10;
-  DateToUpdate.Year = 24;
+   HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN);
 
-  HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN);
+   sTime.Hours = 9;
+   sTime.Minutes = 15;
 
-  sTime.Hours = 9;
-  sTime.Minutes = 15;
+   HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 
-  HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+   HAL_ADC_Start(&hadc1);
 
-  HAL_ADC_Start(&hadc1);
+   contadorGlobal = 0;
 
-  unsigned char verificacao, segundo_ant = 0;
+   unsigned char verificacao, segundo_ant = 0;
 
-  flag flag;
-  flag.sistema = 0;
-  flag.ativaPerfil1 = 1;
-  flag.ativaPerfil2 = 1;
-  flag.atualizarTela = 1;
-  flag.luz1 = 0;
-  flag.luz2 = 0;
-  flag.luz3 = 0;
-  flag.cortina = 0;
-  flag.cortinaAuto = 0;
-  flag.valorTemperatura1 = 25;
-  flag.valorTemperatura2 = 25;
-  flag.valorTemperatura3 = 25;
-  flag.valor_ad1 = 0;
-  flag.valor_ad2 = 0;
-  flag.valor_ad3 = 0;
-  flag.presencaNoturna = 0;
-  flag.contagemLuzesPresenca = 0;
+   flagGlobal.sistema = 0;
+   flagGlobal.ativaPerfil1 = 1;
+   flagGlobal.ativaPerfil2 = 1;
+   flagGlobal.atualizarTela = 1;
+   flagGlobal.luz1 = 0;
+   flagGlobal.luz2 = 0;
+   flagGlobal.luz3 = 0;
+   flagGlobal.cortina = 0;
+   flagGlobal.cortinaAuto = 0;
+   flagGlobal.valorTemperatura1 = 25;
+   flagGlobal.valorTemperatura2 = 25;
+   flagGlobal.valorTemperatura3 = 25;
+   flagGlobal.valor_ad1 = 0;
+   flagGlobal.valor_ad2 = 0;
+   flagGlobal.valor_ad3 = 0;
+   flagGlobal.presencaNoturna = 0;
+   flagGlobal.ativadoNoturno = 0;
 
-  inicia(&htim3, &hadc2);
+   inicia(&htim3, &hadc2);
 
 
-  while (1) {
+   while (1) {
 
-	telaRepouso(&hrtc, &sTime, &DateToUpdate, &segundo_ant, &hadc1);
-  	verificacao = verifica_logoff();
-  	if (verificacao == '*'){
-  		desligaSistema(&flag);
-  	}
-  	if (verificacao == '#' && flag.sistema == 0){
-  		ligaSistema(&flag);
-  		login(&flag, &sTime, &DateToUpdate, &segundo_ant);
-  	}
-  }
+   	telaRepouso(&hrtc, &sTime, &DateToUpdate, &segundo_ant, &hadc1);
+     	verificacao = verifica_logoff();
+     	if (verificacao == '*'){
+     		desligaSistema(&flagGlobal);
+     	}
+     	if (verificacao == '#' && flagGlobal.sistema == 0){
+     		ligaSistema(&flagGlobal);
+     		login(&sTime, &DateToUpdate, &segundo_ant);
+     	}
+     }
+  /* USER CODE END 3 */
 }
-
-
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	HAL_TIM_Base_Start_IT(&htim2);
+	contadorGlobal++;
 
+	switch(contadorGlobal){
+		case 1:
+			break;
+
+		case 2: HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 1);
+				flagGlobal.luz2 = 1;
+				flagGlobal.atualizarTela = 1;
+			break;
+
+		case 3: HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 0);
+				flagGlobal.luz1 = 0;
+				flagGlobal.atualizarTela = 1;
+			break;
+
+		case 4: TIM3->CCR3 = (flagGlobal.valor_ad3<<4);
+				flagGlobal.luz3 = 1;
+				flagGlobal.atualizarTela = 1;
+			break;
+
+		case 5: HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 0);
+				flagGlobal.luz2 = 0;
+				flagGlobal.atualizarTela = 1;
+			break;
+
+		case 6: TIM3->CCR3 = (0<<4);
+				flagGlobal.luz3 = 0;
+				flagGlobal.atualizarTela = 1;
+			break;
+
+		case 7:
+			break;
+
+		case 8:	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, 1);
+				flagGlobal.luz1 = 1;
+				flagGlobal.atualizarTela = 1;
+				contadorGlobal = 0;
+			break;
+
+		default: break;
+	}
 }
 /**
   * @brief System Clock Configuration
@@ -613,7 +662,8 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_3|GPIO_PIN_4
+                          |GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -630,6 +680,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB10 PB11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB3 PB4 PB5 PB6 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;

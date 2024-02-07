@@ -25,7 +25,7 @@ typedef struct flag{				// Struct para flags
 	char valorTemperatura2;
 	char valorTemperatura3;
 	char presencaNoturna;
-	char contagemLuzesPresenca;
+	char ativadoNoturno;
 }flag;
 
 typedef struct indices{				// Struct para os indices
