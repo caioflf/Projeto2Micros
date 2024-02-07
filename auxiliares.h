@@ -12,13 +12,35 @@
 #ifndef SRC_AUXILIARES_H_
 #define SRC_AUXILIARES_H_
 
+void mudarData(RTC_DateTypeDef *DateToUpdate, indice *indice, RTC_HandleTypeDef *hrtc);
+
+void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc);
+
+void converteASCII (unsigned short valor, char *stringConvertida);
+
+void imprimeASCII (unsigned short valor);
+
 char compara_string(char* a, char* b);
 
 void desligaSistema (flag *flag);
 
 void ligaSistema(flag *flag);
 
-void inicia();
+void imprimeZero(unsigned short valor);
+
+void telaRepouso(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate,
+				unsigned char *segundo_ant, ADC_HandleTypeDef *hadc1);
+
+void inicia(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2);
+
+unsigned short configura_dimmer(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2);
+
+char configuraTemperatura(char temperaturaAtual);
+
+void navegacaoMenu(flag *flag, indice *indice, char letra, char perfil);
+
+void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, RTC_DateTypeDef *DateToUpdate, unsigned char *segundo_ant,
+		ADC_HandleTypeDef *hadc1, char letra, TIM_HandleTypeDef *htim3, TIM_HandleTypeDef *htim2, ADC_HandleTypeDef *hadc2, char perfil, char *contadorGlobal);
 
 #endif
 
