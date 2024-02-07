@@ -7,7 +7,7 @@
 
 void cortinaAutomatica(flag *flag, char perfil, ADC_HandleTypeDef *hadc1){
 
-	if(!flag->cortinaAuto)
+	if(!(flag->cortinaAuto))
 	return;
 
 	int valorLidoTemperatura, temperaturaCelsius;
@@ -25,14 +25,14 @@ void cortinaAutomatica(flag *flag, char perfil, ADC_HandleTypeDef *hadc1){
 		if(flag->cortina){
 			if(temperaturaCelsius >= (flag->valorTemperatura1+1)){
 				flag->cortina = 0;
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
 		if(temperaturaCelsius <= (flag->valorTemperatura1-1)){
 			flag->cortina = 1;
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
 		return;
@@ -41,14 +41,14 @@ void cortinaAutomatica(flag *flag, char perfil, ADC_HandleTypeDef *hadc1){
 		if(flag->cortina){
 			if(temperaturaCelsius >= (flag->valorTemperatura2+1)){
 				flag->cortina = 0;
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
 		if(temperaturaCelsius <= (flag->valorTemperatura2-1)){
 			flag->cortina = 1;
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
 		return;
@@ -57,14 +57,14 @@ void cortinaAutomatica(flag *flag, char perfil, ADC_HandleTypeDef *hadc1){
 		if(flag->cortina){
 			if(temperaturaCelsius >= (flag->valorTemperatura3+1)){
 				flag->cortina = 0;
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 				return;
 			}
 			return;
 		}
 		if(temperaturaCelsius <= (flag->valorTemperatura3-1)){
 			flag->cortina = 1;
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 			return;
 		}
 		return;

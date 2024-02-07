@@ -12,9 +12,9 @@
 #ifndef SRC_AUXILIARES_H_
 #define SRC_AUXILIARES_H_
 
-void mudarData(RTC_DateTypeDef *DateToUpdate);
+void mudarData(RTC_DateTypeDef *DateToUpdate, indice *indice, RTC_HandleTypeDef *hrtc);
 
-void mudarHora(RTC_TimeTypeDef *sTime);
+void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc);
 
 void converteASCII (unsigned short valor, char *stringConvertida);
 

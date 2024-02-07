@@ -23,7 +23,7 @@ extern RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef sTime;
 extern RTC_DateTypeDef DateToUpdate;
 
-void mudarData(RTC_DateTypeDef *DateToUpdate){
+void mudarData(RTC_DateTypeDef *DateToUpdate, indice *indice, RTC_HandleTypeDef *hrtc){
 	char letra = 0, i = 0, parteAlta = 0, parteBaixa = 0;
 	limpa_lcd();
 	escreve_lcd("Deseja Mudar a");
@@ -37,6 +37,7 @@ void mudarData(RTC_DateTypeDef *DateToUpdate){
 			if(letra == '3'){
 				limpa_lcd();
 				escreve_lcd("Digite o dia: ");
+				comando_lcd(0xC0);
 				while(1){
 					for(i = 1; i<=4; i++){
 						letra = scan(i);
@@ -75,7 +76,10 @@ void mudarData(RTC_DateTypeDef *DateToUpdate){
 																letra_lcd(letra);
 																parteBaixa = letra-48;
 																DateToUpdate->Month = 10*parteAlta + parteBaixa;
+																HAL_RTC_SetDate(hrtc, DateToUpdate, RTC_FORMAT_BIN);
 																HAL_Delay(500);
+																indice->menu = 0;
+																indice->info = 0;
 																return;
 															}
 														}
@@ -100,7 +104,7 @@ void mudarData(RTC_DateTypeDef *DateToUpdate){
 }
 
 
-void mudarHora(RTC_TimeTypeDef *sTime){
+void mudarHora(RTC_TimeTypeDef *sTime, indice *indice, RTC_HandleTypeDef *hrtc){
 	char letra = 0, i = 0, parteAlta = 0, parteBaixa = 0;
 	limpa_lcd();
 	escreve_lcd("Deseja Mudar a");
@@ -114,6 +118,8 @@ void mudarHora(RTC_TimeTypeDef *sTime){
 			if(letra == '3'){
 				limpa_lcd();
 				escreve_lcd("Digite a hora: ");
+				comando_lcd(0xC0);
+				HAL_Delay(500);
 				while(1){
 					for(i = 1; i<=4; i++){
 						letra = scan(i);
@@ -147,7 +153,10 @@ void mudarHora(RTC_TimeTypeDef *sTime){
 																letra_lcd(letra);
 																parteBaixa = letra-48;
 																sTime->Hours = 10*parteAlta + parteBaixa;
+																HAL_RTC_SetTime(hrtc, sTime, RTC_FORMAT_BIN);
 																HAL_Delay(500);
+																indice->menu = 0;
+																indice->info = 0;
 																return;
 															}
 														}
@@ -326,6 +335,8 @@ void inicia(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *hadc2){
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 }
 
 char ler_senha(){
@@ -411,15 +422,6 @@ unsigned short configura_dimmer(TIM_HandleTypeDef *htim3, ADC_HandleTypeDef *had
 
 
 	}
-	//escreve_lcd("Salvar (3)");
-	//while(letra != '3'){
-	//	letra = scan (1);
-	//	HAL_ADC_Start(hadc2);
-	//	HAL_ADC_PollForConversion(hadc2, 1);
-	//	valor_ad = HAL_ADC_GetValue(hadc2);
-	//	TIM3->CCR3 = (valor_ad<<4);
-	//	HAL_Delay(1);
-	//}
 }
 
 char configuraTemperatura(char temperaturaAtual){
@@ -427,10 +429,8 @@ char configuraTemperatura(char temperaturaAtual){
 	while (1){
 		limpa_lcd();
 		escreve_lcd("Config. Temp.");
-		comando_lcd(0x0C);
-		letra_lcd(0x2C);
-		letra_lcd(0x38);
-		escreve_lcd("     ");
+		comando_lcd(0xC0);
+		escreve_lcd("->   ");
 		imprimeASCII(temperaturaAtual);
 		letra_lcd(223);
 		escreve_lcd("C");
@@ -525,7 +525,7 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 	if (flag->atualizarTela)
 		flag->atualizarTela = 0;
 
-	if(indice->menu == 0){
+	else if(indice->menu == 0){
 		 telaRepouso(hrtc, sTime, DateToUpdate, segundo_ant, hadc1);
 		 return;
 	}
@@ -629,7 +629,7 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 
 				switch (indice->info){
 
-					case 1: escreve_lcd("Cortina: ");
+					case 0: escreve_lcd("Cortina: ");
 
 							if (flag->cortina){				// avisa o status da luz
 								escreve_lcd("ON");
@@ -637,7 +637,7 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 								escreve_lcd("Desligar: (1)");
 
 								if (letra == '1'){			// desliga
-									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 									flag->cortina = 0;
 									flag->atualizarTela = 1;
 								}
@@ -648,14 +648,14 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 								comando_lcd(0xC0);
 								escreve_lcd("Ligar: (3)");
 								if (letra == '3'){		// liga
-									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+									HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
 									flag->cortina = 1;
 									flag->atualizarTela = 1;
 								}
 							}
 							break;
 
-					case 2: escreve_lcd("Automático: ");
+					case 1: escreve_lcd("Automatico: ");
 
 							if (flag->cortinaAuto){
 								escreve_lcd("ON");
@@ -677,7 +677,7 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 							}
 							break;
 
-					case 3:	if (perfil == 1)
+					case 2:	if (perfil == 1)
 							flag->valorTemperatura1 = configuraTemperatura(flag->valorTemperatura1);
 
 							if (perfil == 2)
@@ -728,10 +728,10 @@ void menu(flag *flag, indice *indice, RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *
 				break;
 
 		case 6: if(indice->info == 0)
-				mudarHora(sTime);
+				mudarHora(sTime, indice, hrtc);
 
 				if(indice->info == 1)
-				mudarData(DateToUpdate);
+				mudarData(DateToUpdate, indice, hrtc);
 
 				flag->atualizarTela = 1;
 
